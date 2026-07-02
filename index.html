@@ -4,11 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Open Three</title>
+<link rel="stylesheet" href="https://threehub.cn/3d-file-server/js/cesium/style.css">
 <script type="importmap">
 {
     "imports": {
-        "three": "https://threejs.org/build/three.module.min.js",
-        "three/examples/jsm/": "https://threejs.org/examples/jsm/"
+        "cesium": "https://threehub.cn/3d-file-server/js/cesium/Cesium.js"
     }
 }
 </script>
@@ -33,109 +33,40 @@
 <body>
 <div id="box"></div>
 <script type="module">
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+window.CESIUM_BASE_URL = "https://threehub.cn/3d-file-server/js/cesium"
+import * as Cesium from 'cesium'
 
 const box = document.getElementById('box')
 
-const scene = new THREE.Scene()
+const viewer = new Cesium.Viewer(box, {
 
-const camera = new THREE.PerspectiveCamera(75, box.clientWidth / box.clientHeight, 0.1, 1000)
+    animation: false,//是否创建动画小器件，左下角仪表    
 
-camera.position.set(0.5, -0.5, 3)
+    baseLayerPicker: false,//是否显示图层选择器，右上角图层选择按钮
 
-const renderer = new THREE.WebGLRenderer()
+    baseLayer: false, // 不显示默认图层
 
-renderer.setSize(box.clientWidth, box.clientHeight)
+    fullscreenButton: false,//是否显示全屏按钮，右下角全屏选择按钮
 
-box.appendChild(renderer.domElement)
+    timeline: false,//是否显示时间轴    
 
-new OrbitControls(camera, renderer.domElement)
-
-window.onresize = () => {
-
-    renderer.setSize(box.clientWidth, box.clientHeight)
-
-    camera.aspect = box.clientWidth / box.clientHeight
-
-    camera.updateProjectionMatrix()
-
-}
-
-const flagTexture = new THREE.TextureLoader().load('https://threehub.cn/3d-file-server/images/chinaFlag.jpg')
-
-const flagMaterial = new THREE.RawShaderMaterial({
-
-    vertexShader: `uniform mat4 projectionMatrix;
-        uniform mat4 modelMatrix;
-        uniform mat4 viewMatrix;
-        uniform vec2 uFrequency;
-        uniform float uTime;
-        uniform float uStrength;
-        attribute vec3 position;
-        attribute vec2 uv;
-        varying float vDark;
-        varying vec2 vUv;
-        void main() {
-            vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-            float xFactor = clamp((modelPosition.x + 1.25) / 2.0, 0.0, 2.0); 
-            float vWave = sin(modelPosition.x * uFrequency.x - uTime ) * xFactor * uStrength ;
-            vWave += sin(modelPosition.y * uFrequency.y - uTime) * xFactor * uStrength * 0.5;
-            modelPosition.y += sin(modelPosition.x * 2.0 + uTime * 0.5) * 0.05 * xFactor;
-            modelPosition.z += vWave;
-            vec4 viewPosition = viewMatrix * modelPosition;
-            vec4 projectedPosition = projectionMatrix * viewPosition;
-            gl_Position = projectedPosition;
-            vUv = uv;
-            vDark = vWave;
-        }`,
-
-    fragmentShader: `precision mediump float;
-        varying float vDark;
-        uniform sampler2D uTexture;
-        varying vec2 vUv;
-        void main(){
-            vec4 textColor = texture2D(uTexture, vUv);
-            textColor.rgb *= vDark + 0.85;
-            gl_FragColor = textColor;
-        }`,
-
-    side: THREE.DoubleSide,
-
-    uniforms: {
-        
-        uFrequency: { value: new THREE.Vector2(3, 3) },
-        
-        uTime: { value: 0 },
-        
-        uTexture: { value: flagTexture },
-        
-        uStrength: { value: 0.2 }
-        
-    }
+    infoBox: false,//是否显示信息框   
 
 })
 
-const flagGeometry = new THREE.BoxGeometry(3, 2, 0.025, 64, 64)
+const url = 'https://server.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer'
+ 
+const layer = Cesium.ImageryLayer.fromProviderAsync(
 
-const flagMesh = new THREE.Mesh(flagGeometry, flagMaterial)
+    Cesium.ArcGisMapServerImageryProvider.fromUrl(url)
 
-scene.add(flagMesh)
+)
 
-animate()
+viewer.imageryLayers.add(layer)
 
-function animate() {
-
-    flagMaterial.uniforms.uTime.value += 0.06
-
-    renderer.render(scene, camera)
-
-    requestAnimationFrame(animate)
-
-}
 
 /**
- * 名称: 中国旗帜
+ * 名称: arcgis图层
  * 作者: 优雅永不过时 https://z2586300277.github.io/
  */
 
