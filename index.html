@@ -1,75 +1,26 @@
+<!--
+ * @Author: zhanglichun 954751293@qq.com
+ * @Date: 2026-07-03 10:09:01
+ * @LastEditors: zhanglichun 954751293@qq.com
+ * @LastEditTime: 2026-07-03 10:32:11
+ * @FilePath: \project\index.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Open Three</title>
-<link rel="stylesheet" href="https://z2586300277.github.io/3d-file-server/js/cesium/style.css">
-<script type="importmap">
-{
-    "imports": {
-        "cesium": "https://z2586300277.github.io/3d-file-server/js/cesium/Cesium.js"
-    }
-}
-</script>
-<style>
-    body {
-        margin: 0;
-        padding: 1px;
-        box-sizing: border-box;
-        background-color: #1f1f1f;
-        display: flex;
-        flex-direction: column;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-    }
-    #box {
-        width: 100%;
-        height: 100%;
-    }
-</style>
+  <meta charset="UTF-8" />
+  <title>Open Three</title>
+  <meta name="description" content="项目案例" />
+  <meta name="keywords" content="three,three.js,cesium,cesium.js,webgl,examples,editor,shader,code,模型,渲染,3d案例,三维案例,编辑器" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./files/site/logo.svg" />
+  <script type="module" src="./config/config.js"></script>
 </head>
+
 <body>
-<div id="box"></div>
-<script type="module">
-window.CESIUM_BASE_URL = "https://z2586300277.github.io/3d-file-server/js/cesium"
-import * as Cesium from 'cesium'
-
-const box = document.getElementById('box')
-
-const viewer = new Cesium.Viewer(box, {
-
-    animation: false,//是否创建动画小器件，左下角仪表    
-
-    baseLayerPicker: false,//是否显示图层选择器，右上角图层选择按钮
-
-    baseLayer: false, // 不显示默认图层
-
-    fullscreenButton: false,//是否显示全屏按钮，右下角全屏选择按钮
-
-    timeline: false,//是否显示时间轴    
-
-    infoBox: false,//是否显示信息框   
-
-})
-
-const url = 'https://server.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer'
- 
-const layer = Cesium.ImageryLayer.fromProviderAsync(
-
-    Cesium.ArcGisMapServerImageryProvider.fromUrl(url)
-
-)
-
-viewer.imageryLayers.add(layer)
-
-
-/**
- * 名称: arcgis图层
- * 作者: 优雅永不过时 https://z2586300277.github.io/
- */
-
-</script>
+  <div id="app"></div>
 </body>
+
 </html>
