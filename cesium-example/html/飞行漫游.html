@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+  <script src="/utils/Roaming.js"></script>
+  <style>
+    .cotrols {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 10000;
+    }
+  </style>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+  <div class="cotrols">
+    <button onclick="cameraRoaming()">开始相机漫游</button>
+    <button onclick="PauseOrContinue(false)">暂停</button>
+    <button onclick="PauseOrContinue(true)">继续</button>
+    <button onclick="EndRoaming()">取消</button>
+  </div>
+  <script type="text/javascript">
+
+    const viewer = new Cesium.Viewer('map', {
+      imageryProvider: false,
+      baseLayerPicker: false,
+    });
+
+    var xyz = new Cesium.UrlTemplateImageryProvider({
+      "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+    })
+    viewer.imageryLayers.addImageryProvider(xyz)
+    // 开启帧率
+    viewer.scene.debugShowFramesPerSecond = true;
+    var roaming = new Roaming(viewer, { time: 3 });
+
+    function cameraRoaming () {
+      roaming.cameraRoaming([Cesium.Cartesian3.fromDegrees(114.35231209, 30.53542614, 1000), Cesium.Cartesian3.fromDegrees(114.40782845, 30.51011682, 100)])
+    }
+    function PauseOrContinue (params) {
+      roaming.PauseOrContinue(params)
+    }
+    function EndRoaming () {
+      roaming.EndRoaming()
+    }
+  </script>
+</body>
+
+</html>

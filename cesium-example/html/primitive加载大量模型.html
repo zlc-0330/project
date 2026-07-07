@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+    <script src="/utils/turf.min.js"></script>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+    <script type="text/javascript">
+
+                const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+
+        // 开启帧率
+        viewer.scene.debugShowFramesPerSecond = true;
+
+        var points = turf.randomPoint(1000, { bbox: [-180, -90, 180, 90] })
+
+        points.features.forEach((k) => {
+            let cor = k.geometry.coordinates;
+
+            var origin = Cesium.Cartesian3.fromDegrees(cor[0], cor[1], 20000.0);
+            var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+
+            viewer.scene.primitives.add(Cesium.Model.fromGltf({
+                scale: 500000,
+                modelMatrix: modelMatrix,
+                url: '/data/model/Man.glb',
+            }));
+        })
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+     <!-- 1. 引入 Cesium 样式（CDN） -->
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.118.0/Build/Cesium/Widgets/widgets.css">
+    <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+    <script src="https://unpkg.com/cesium@1.118.0/Build/Cesium/Cesium.js"></script>
+</head>
+
+<body style="
+      margin: 0;
+      overflow: hidden;
+      background: #fff;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+    ">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+
+    <script type="text/javascript">
+        // (function(){
+
+
+
+  const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            // "url":'http://10.1.111.30:30941/tile-server/v1?layer=vtpk&TileMatrix={z}&TileCol={x}&TileRow={y}'
+            "url":'http://10.1.111.30:30941/tile-server/v1?layer=bingmaps&TileMatrix={z}&TileCol={x}&TileRow={y}'
+        //  "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'   
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+        viewer.scene.debugShowFramesPerSecond = true;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
+
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(121.52187979, 25.05223993, 200000)
+        });
+setTimeout(async() => {
+    console.log('加载地形',Cesium.MapboxVectorTileImageryProvider,Cesium.VERSION);
+    
+//      viewer.terrainProvider = Cesium.CesiumTerrainProvider({
+//     url: 'http://10.1.111.30:30941/tile-server/v1?layer=CesiumTerrain_tw&TileMatrix={z}&TileCol={x}&TileRow={y}',
+//     // format: MEarth.TerrainFormat.QUANTIZED_MESH_1_0, // 必须指定格式
+//     requestVertexNormals: true,
+//     requestWaterMask: false // 如果你的服务不支持水体掩膜，设为 false 避免 404
+//   });
+
+//   viewer.terrainProvider=await  Cesium.CesiumTerrainProvider.fromUrl(
+//          'http://10.1.111.30:30941/tile-server/v1/metadata/CesiumTerrain_tw', {
+//         //  '//data.mars3d.cn/terrain', {
+//         requestWaterMask: true,
+//         requestVertexNormals: true,
+//       }) 
+// 'http://10.1.111.30:30941/tile-server/v1/metadata/CesiumTerrain_tw/layer.json'
+
+//             viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+//     // 地形服务请求地址模板（替换 {z}/{x}/{y} 为 Cesium/Cesium 识别的占位符）
+//     url: 'http://10.1.111.30:30941/tile-server/v1',
+//     // 自定义请求参数（匹配服务端的参数名：layer、TileMatrix、TileCol、TileRow）
+//     requestParameters: {
+//       layer: 'CesiumTerrain_tw',
+//       TileMatrix: '{z}', // 层级占位符
+//       TileCol: '{x}',     // 列号占位符
+//       TileRow: '{y}'      // 行号占位符
+//     },
+//     // 关键配置（根据你的地形服务类型调整）
+//     hasVertexNormals: false, // 若无顶点法线则设为 false
+//     hasWaterMask: false,     // 若无水面掩码则设为 false
+//     // 强制 Cesium 使用 GET 请求拼接参数（适配你的服务接口
+//     queryParameters: {
+//       layer: 'CesiumTerrain_tw'
+//     }
+//   });
+//   viewer.terrainProvider = new Cesium.WebMapTileServiceTerrainProvider({
+//         url: 'http://10.1.111.30:30941/tile-server/v1', // GeoServer WMTS URL
+//         layer: 'CesiumTerrain_tw', // 替换为你的工作区和图层名称
+//         style: 'default',
+//         format: 'image/png',
+//         tileMatrixSetID: 'EPSG:4326', // 确保匹配你的投影系统
+//         maximumLevel: 18,
+//     })
+// 定义地名标注样式
+// const labelStyle = new Cesium.Cesium3DTileStyle({
+//     label: {
+//         show: true,
+//         // 假设地名字段为 "name"，请根据实际字段调整（如 "label", "text", "NAME"）
+//         text: "${name}",
+//         font: "12px sans-serif",
+//         fillColor: Cesium.Color.WHITE,
+//         outlineColor: Cesium.Color.BLACK,
+//         outlineWidth: 2,
+//         // 避免被地形遮挡
+//         eyeOffset: new Cesium.Cartesian3(0.0, 0.0, 100.0),
+//         // 水平/垂直对齐
+//         horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+//         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+//         pixelOffset: new Cesium.Cartesian2(0, -10)
+//     }
+// });
+
+// 创建矢量切片图层
+// const placeNameLayer = new Cesium.VectorTileLayer({
+//     tileProvider: new Cesium.VectorTileProvider({
+//         // 关键：构造你的瓦片请求 URL（query string 形式）
+//         getTileUrl: function(level, x, y) {
+//             return `http://10.1.111.30:30941/tile-server/v1?layer=vtpk&TileMatrix=${level}&TileCol=${x}&TileRow=${y}`;
+//         },
+//         format: Cesium.VectorTileFormat.PBF,
+//         // 使用 Web 墨卡托（ArcGIS 默认）
+//         tilingScheme: new Cesium.WebMercatorTilingScheme(),
+//         // 根据你的服务最大层级调整（如 0～14）
+//         maximumLevel: 14,
+//         // 可选：最小层级（避免低 zoom 显示太多）
+//         minimumLevel: 8
+//     }),
+//     style: labelStyle
+// });
+
+// // 添加到地图
+// viewer.imageryLayers.add(placeNameLayer);
+
+const imageryProvider = new Cesium.UrlTemplateImageryProvider({
+    url: 'http://10.1.111.30:30941/tile-server/v1?layer=vtpk&TileMatrix={z}&TileCol={x}&TileRow={y}',
+    tilingScheme: new Cesium.WebMercatorTilingScheme(), // 主流瓦片坐标系（Web墨卡托）
+    maximumLevel: 18, // 瓦片最大层级（根据你的服务实际范围调整）
+    minimumLevel: 0,  // 瓦片最小层级
+    credit: new Cesium.Credit('地名标记服务') // 可选：添加版权标注
+  });
+  viewer.imageryLayers.addImageryProvider(imageryProvider);
+
+//   // 5. 将瓦片服务添加到Cesium视图
+// const imageryProvider = new Cesium.VectorTileImageryProvider({
+//     url: 'http://10.1.111.30:30941/tile-server/v1?layer=vtpk&TileMatrix={z}&TileCol={x}&TileRow={y}',
+//     layer: 'vtpk',
+//     style: new Cesium.Cesium3DTileStyle({
+//         labelStyle: {
+//             show: true,
+//             font: '14px sans-serif',
+//             fillColor: Cesium.Color.BLACK,
+//             outlineColor: Cesium.Color.WHITE,
+//             outlineWidth: 1,
+//             horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+//             verticalOrigin: Cesium.VerticalOrigin.CENTER
+//         }
+//     }),
+//     tilingScheme: new Cesium.WebMercatorTilingScheme(),
+//     maximumLevel: 18
+// });
+// const imageryProvider = await Cesium.TileMapServiceImageryProvider.fromUrl(
+//    'http://10.1.111.30:30941/tile-server/v1/vtpk', {
+//      fileExtension: 'png',
+//      maximumLevel: 4,
+//      rectangle: new Cesium.Rectangle(
+//        Cesium.Math.toRadians(-120.0),
+//        Cesium.Math.toRadians(20.0),
+//        Cesium.Math.toRadians(-60.0),
+//        Cesium.Math.toRadians(40.0))
+// });
+
+// 使用 MapboxVectorTileImageryProvider（Cesium >= 1.92）
+// const vectorTileLayer = new Cesium.MapboxVectorTileImageryProvider({
+//     url: urlTemplate,
+//     // 可选：指定样式（若服务不包含样式，需手动定义）
+//     style: {
+//         sources: {
+//             'vtpk-source': {
+//                 type: 'vector',
+//                 tiles: [urlTemplate],
+//                 minzoom: 0,
+//                 maxzoom: 14
+//             }
+//         },
+//         layers: [
+//             {
+//                 id: 'labels',
+//                 type: 'symbol',
+//                 source: 'vtpk-source',
+//                 layout: {
+//                     'text-field': ['get', 'name'], // 假设属性中有 name 字段
+//                     'text-font': ['Open Sans Regular'],
+//                     'text-size': 12
+//                 },
+//                 paint: {
+//                     'text-color': '#0000ff'
+//                 }
+//             }
+//         ]
+//     }
+// });
+
+// viewer.imageryLayers.addImageryProvider(vectorTileLayer);
+
+
+ // 3. 核心：配置地名瓦片服务的影像提供者
+        // const labelTileProvider = new Cesium.UrlTemplateImageryProvider({
+        //     // URL 模板：将 Cesium 内置的 {z}(层级)、{x}(列)、{y}(行) 映射到服务参数
+        //     url: "http://10.1.111.30:30941/tile-server/v1?layer=vtpk&TileMatrix={z}&TileCol={x}&TileRow={y}",
+        //     minimumLevel: 0, // 瓦片最小层级（根据后端服务实际支持范围调整）
+        //     maximumLevel: 18, // 瓦片最大层级（根据后端服务实际支持范围调整）
+        //     disableCache: true, // 开发阶段禁用缓存，方便调试
+        //     credit: new Cesium.Credit("地名标注服务"), // 图层版权说明（可选）
+        //     // 瓦片投影规则（默认 Web 墨卡托，需和后端服务一致）
+        //     tilingScheme: new Cesium.WebMercatorTilingScheme(),
+        //     // 处理瓦片行号翻转（关键！部分服务的 TileRow 坐标系与 Cesium 相反，若加载后位置不对需开启）
+        //     flipXY: false 
+        // });
+
+        // // 4. 将地名图层添加到 Cesium 视图（可调整图层层级，数字越大越靠上）
+        // const labelLayer = new Cesium.ImageryLayer(labelTileProvider);
+        // viewer.imageryLayers.add(labelLayer, 1); // 第二个参数 1 表示图层层级（默认底图为 0）
+
+         // 3. 核心：加载 ArcGIS 矢量瓦片（VTPK）服务
+        // const vectorTileProvider = new Cesium.ArcGisVectorTilesImageryProvider({
+        //     // 矢量瓦片服务根地址（去掉具体的 TileMatrix/TileCol/TileRow 参数）
+        //     url: "http://10.1.111.30:30941/tile-server/v1",
+        //     // 图层名称（对应后端的 layer=vtpk）
+        //     layer: "vtpk",
+        //     // 瓦片层级范围（需与后端服务一致）
+        //     minimumLevel: 0,
+        //     maximumLevel: 18,
+        //     // 跨域配置（后端必须开启 CORS）
+        //     enablePickFeatures: false, // 关闭要素拾取（简化加载）
+        //     credit: new Cesium.Credit("地名标注服务")
+        // });
+
+        // // 4. 添加矢量瓦片图层到视图
+        // const vectorLayer = new Cesium.ImageryLayer(vectorTileProvider);
+        // viewer.imageryLayers.add(vectorLayer);
+
+}, 1000);
+          
+
+
+    </script>
+</body>
+
+</html>

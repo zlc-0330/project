@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="/assets/plottingfont/plottingfont.css" />
+  <script src="/utils/jquery-1.8.3.min.js"></script>
+  <script src="/utils/dom-to-image.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
+
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body style="
+      margin: 0;
+      overflow: hidden;
+      background: #fff;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+    ">
+  <div class="dddddd" style="width: 72px;"><i class="plottingfont plottingfont-8"
+      style="font-size: 72px;color: red;"></i></div>
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+  <script type="text/javascript">
+            const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+    viewer.scene.debugShowFramesPerSecond = true;
+
+    function base64ToBlob(base64) {
+      var parts = base64.split(';base64,');
+      var contentType = parts[0].split(':')[1];
+      var raw = window.atob(parts[1]);
+      var rawLength = raw.length;
+      var uInt8Array = new Uint8Array(rawLength);
+      for (var i = 0; i < rawLength; ++i) {
+        uInt8Array[i] = raw.charCodeAt(i);
+      }
+      return new Blob([uInt8Array], { type: contentType });
+    }
+    domtoimage.toPng(document.getElementsByClassName("dddddd")[0]).then(res => {
+      var blob = base64ToBlob(res);
+      var url = URL.createObjectURL(blob);
+
+      var hello = viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(-75.166493, 39.9060534),
+        billboard: {
+            image: url,
+            scale: 1,
+        },
+      });
+    })
+
+  </script>
+</body>
+
+</html>

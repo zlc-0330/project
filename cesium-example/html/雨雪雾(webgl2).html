@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+     <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+  <script src="/utils/weatherEffects2.js"></script>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+
+    <!-- ./video.mp4 -->
+    <script type="text/javascript">
+
+        const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+        viewer.scene.debugShowFramesPerSecond = true;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(-95.166493, 39.9060534, 2000000)
+        });
+
+        var skyBox;
+        function weatherEffectssss(a, b) {
+            if (skyBox != undefined) {
+                skyBox.removePostProcessStage();
+                skyBox = undefined;
+            }
+            skyBox = new weatherEffects(viewer, {
+                name: a,
+                type: b
+            });
+        }
+
+        // 注意封装库的引用
+
+        // weatherEffectssss('雨', 'rain');
+        weatherEffectssss('雪','snow')
+        // weatherEffectssss('雾','fog')
+
+        // skyBox.removePostProcessStage();
+
+
+    </script>
+</body>
+
+</html>

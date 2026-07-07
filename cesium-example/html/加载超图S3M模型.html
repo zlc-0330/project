@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+  <script src="/libs/SuperMap3D/SuperMap3D.js"></script>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+  <script type="text/javascript">
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjOWM5N2FlYy0wNTIyLTRhZDAtYTM2Yi04ZGEzYzMzNTRjYmQiLCJpZCI6NTcwNzEsImlhdCI6MTYyMjAxMjY3MH0.IRCEryIGGPZeCGqJ8lpMESuZO9DTIlLnF-WS-w9YYzc'
+
+    const viewer = new Cesium.Viewer('map', {
+      imageryProvider: false,
+      baseLayerPicker: false,
+    });
+    var xyz = new Cesium.UrlTemplateImageryProvider({
+      "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+    })
+    viewer.imageryLayers.addImageryProvider(xyz)
+    let scenes = [
+      // 'http://www.supermapol.com/realspace/services/3D-suofeiya_church/rest/realspace',
+      'https://www.supermapol.com/realspace/services/3D-CBD/rest/realspace',
+      // 'https://www.supermapol.com/realspace/services/3D-CQmodel_wireframe_2000/rest/realspace',
+      // 'https://www.supermapol.com/realspace/services/3D-cloud/rest/realspace'
+    ];
+    viewer.scene.open(scenes[0]);
+
+  </script>
+</body>
+
+</html>

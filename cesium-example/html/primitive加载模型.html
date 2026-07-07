@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+  <script type="text/javascript">
+
+
+    const viewer = new Cesium.Viewer('map', {
+      imageryProvider: false,
+      baseLayerPicker: false,
+      shouldAnimate: true
+    });
+    var xyz = new Cesium.UrlTemplateImageryProvider({
+      "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+    })
+    viewer.imageryLayers.addImageryProvider(xyz)
+
+    // 开启帧率
+    viewer.scene.debugShowFramesPerSecond = true;
+
+    // 新版本API Model.fromGltfAsync
+    // https://cesium.com/learn/cesiumjs/ref-doc/Model.html?classFilter=model
+
+
+    // --------------不带方位-----------
+    // var origin = Cesium.Cartesian3.fromDegrees(-95.0, 40.0, 200000.0);
+    // var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(origin);
+
+    // --------------带方位-------------
+    let heading = Cesium.defaultValue(90, 0.0);
+    let pitch = Cesium.defaultValue(0, 0.0);
+    let roll = Cesium.defaultValue(0, 0.0);
+    var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll);
+    var origin = Cesium.Cartesian3.fromDegrees(-95.0, 40.0, 200000.0);
+    var modelMatrix = Cesium.Transforms.headingPitchRollToFixedFrame(origin, hpr);
+
+    const model = viewer.scene.primitives.add(Cesium.Model.fromGltf({
+      scale: 7000,
+      modelMatrix: modelMatrix,
+      url: '/data/model/Man.glb',
+    }));
+
+    viewer.camera.lookAtTransform(modelMatrix, new Cesium.Cartesian3(-50000, 0, 80000));
+
+    // cesium 1.107+ 的图元(Primitive) 已经不支持 readyPromise
+    // 完全载入
+    model.readyPromise.then(function (model) {
+      console.log(model)
+
+      model.silhouetteSize = 3
+      model.silhouetteColor = Cesium.Color.fromCssColorString("rgba(254, 129, 6, 0.65)");
+
+      // 动画是存储在glTF模型里，所以需要等待readyPromise执行后才能访问他们
+      model.activeAnimations.addAll({
+        loop: Cesium.ModelAnimationLoop.REPEAT,  //循环播放动画
+        speedup: 0.5,
+        reverse: true
+      });
+    })
+
+  </script>
+</body>
+
+</html>

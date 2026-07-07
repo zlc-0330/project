@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+  <script type="text/javascript">
+
+    const viewer = new Cesium.Viewer('map', {
+      imageryProvider: false,
+      baseLayerPicker: false,
+    });
+
+    var xyz = new Cesium.UrlTemplateImageryProvider({
+      "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+    })
+    viewer.imageryLayers.addImageryProvider(xyz)
+
+    // 加载地形
+    viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+      url: '//data.mars3d.cn/terrain'
+    });
+
+    // 监听地形提供者的ready事件
+    viewer.terrainProvider.readyPromise.then(function (terrainProvider) {
+      console.log('地形已加载完成.');
+      getHeight()
+    })
+
+
+    function getHeight () {
+      var positions = [
+        Cesium.Cartographic.fromDegrees(120.925145, 27.988257),
+        Cesium.Cartographic.fromDegrees(87.0, 28.0)
+      ];
+
+      // 粗略获取高度
+      var promise = Cesium.sampleTerrain(viewer.terrainProvider, 11, positions);
+      promise.then(function (updatedPositions) {
+        console.log('sampleTerrain')
+        console.log(updatedPositions)
+      });
+
+      // 精确获取高度
+      var promise2 = Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, positions);
+      promise2.then(function (updatedPositions) {
+        console.log('sampleTerrainMostDetailed')
+        console.log(updatedPositions)
+      });
+
+      // 另外一种获取高度方式（非常不准确！！！）
+      var cartographic = Cesium.Cartographic.fromDegrees(120.925145, 27.988257);
+      var posi = new Cesium.Cartographic(cartographic.longitude, cartographic.latitude)
+      var height = viewer.scene.globe.getHeight(posi)
+      console.log(height)
+
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- 1. 引入 Cesium 样式（CDN） -->
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+    <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+    <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+    <script type="text/javascript">
+
+        const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+
+        // Cesium地形
+        viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+            url: '//data.mars3d.cn/terrain'
+        });
+
+
+        // Primitive
+        //     1、GeometryInstance
+        //     2、Apperance
+        //     3、modelMatrix
+
+
+        // 开启帧率
+        viewer.scene.debugShowFramesPerSecond = true;
+
+        // 多边形
+        var polygonInstance = new Cesium.GeometryInstance({
+            id: {
+                "name": 'polygon'
+            },
+            geometry: new Cesium.PolygonGeometry({
+                vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
+                polygonHierarchy: new Cesium.PolygonHierarchy(
+                    Cesium.Cartesian3.fromDegreesArray([
+                        -120, 40,
+                        -120, 30,
+                        -110, 30,
+                        -110, 40
+                    ])
+                ),
+                // extrudedHeight:2000
+            }),
+            attributes: {
+                color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.RED.withAlpha(0.5))
+            }
+        });
+        viewer.scene.primitives.add(new Cesium.Primitive({
+            geometryInstances: [polygonInstance],
+            appearance: new Cesium.PerInstanceColorAppearance()
+        }));
+
+        // 线
+        var lineInstance = new Cesium.GeometryInstance({
+            id: {
+                "name": 'line'
+            },
+            geometry: new Cesium.PolylineGeometry({
+                positions: Cesium.Cartesian3.fromDegreesArray([
+                    -100, 40,
+                    -90, 40,
+                    -120, 60,
+                ]),
+                width: 15,
+                vertexFormat: Cesium.PolylineColorAppearance.VERTEX_FORMAT,
+            }),
+            attributes: {
+                color: Cesium.ColorGeometryInstanceAttribute.fromColor(Cesium.Color.fromCssColorString("#001aff").withAlpha(0.5))
+            }
+        })
+        viewer.scene.primitives.add(new Cesium.Primitive({
+            geometryInstances: [lineInstance],
+            appearance: new Cesium.PolylineColorAppearance()
+        }))
+
+        // 发光的线
+        viewer.scene.primitives.add(new Cesium.Primitive({
+            geometryInstances: new Cesium.GeometryInstance({
+                geometry: new Cesium.PolylineGeometry({
+                    positions: Cesium.Cartesian3.fromDegreesArray([
+                        -110, 40,
+                        -100, 40,
+                        -130, 60,
+                    ]),
+                    width: 20.0,
+                    vertexFormat: Cesium.PolylineMaterialAppearance.VERTEX_FORMAT
+                }),
+                id: {
+                    "name": '发光的线'
+                },
+            }),
+            appearance: new Cesium.PolylineMaterialAppearance({
+                material: Cesium.Material.fromType(Cesium.Material.PolylineGlowType, {
+                    color: new Cesium.Color(1.0, 0.0, 0.0, 1.0)
+                })
+            })
+        }));
+
+        // -------Primitive点击事件-------------
+        var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        handler.setInputAction(function (clickEvent) {
+            var ray1 = viewer.camera.getPickRay(clickEvent.position);
+            var cartesian = viewer.scene.globe.pick(ray1, viewer.scene);
+            var pick = viewer.scene.pickPosition(clickEvent.position);
+            var pickEd = viewer.scene.pick(clickEvent.position);
+            if (pickEd && pick) {
+                console.log(pickEd.id)
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+        var flag = false;
+        var models = viewer.scene.primitives._primitives;
+        for (let i = 0; i < models.length; i++) {
+            if (models[i]._url) {
+                flag = true;
+            }
+        }
+        console.log(flag)
+
+    </script>
+</body>
+
+</html>

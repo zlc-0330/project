@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+     <!-- 1. 引入 Cesium 样式（CDN） -->
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.72/Build/Cesium/Widgets/widgets.css">
+    <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+    <script src="https://unpkg.com/cesium@1.72/Build/Cesium/Cesium.js"></script>
+    <script src="/utils/CesiumVectorTile.js"></script>
+    <script src="/utils/jquery-1.8.3.min.js"></script>
+  
+    <!-- <script src="/src/utils/shp.js"></script> -->
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+
+    <script type="text/javascript">
+
+      
+// 1.72版本有效   高版本不适配
+// 通用方法是用shp.js将shp压缩包解析成geojson数据
+
+// fetch('/data/shp.zip', {})
+//  .then(response => {
+//         if (!response.ok) throw new Error('ZIP 文件加载失败');
+//         return response.arrayBuffer(); // 必须转为 ArrayBuffer
+//       })
+//   .then(arrayBuffer  => {
+//     // 处理响应
+   
+//    console.log(arrayBuffer,'arrayBuffer',window.shp);
+   
+//      window.shp.parseZip(arrayBuffer ).then((geojson) => {
+//         // plotObj.flyTo(mViewer.viewer, cItem.id);
+//         console.log("大概位置：", geojson);
+       
+//       }).catch(error => {
+//         ElMessage.error('信息解析失败', error)
+//       })
+//   })
+//   .catch(error => {
+//     // 处理错误
+//   });
+
+
+  const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+        // 开启帧率
+        viewer.scene.debugShowFramesPerSecond = true;
+
+        var config = {
+            url: {
+                shp: "/data/shp/china.shp",
+                dbf: "/data/shp/china.dbf",
+                prj: "/data/shp/china.prj"
+            },
+            name: {
+                shp: "china.shp",
+                dbf: "china.dbf",
+                prj: "china.prj"
+            },
+            style: {
+                outlineColor: "rgb(1,255,0)",
+                lineWidth: 5,
+                fill: true
+            },
+            isFlyTo: true,
+            minimumLevel: 1,
+            maximumLevel: 20
+        }
+        Cesium.when.all([
+            Cesium.Resource.fetchBlob(config.url.shp),
+            Cesium.Resource.fetchBlob(config.url.dbf),
+            Cesium.Resource.fetchBlob(config.url.prj),
+        ], function (files) {
+            files[0].name = config.name.shp
+            files[1].name = config.name.dbf
+            files[2].name = config.name.prj
+            var shpProvider = new Cesium.VectorTileImageryProvider({
+                source: files,
+                credit: "credit",
+                defaultStyle: config.style,
+                minimumLevel: config.minimumLevel,
+                maximumLevel: config.maximumLevel
+            });
+            shpProvider.readyPromise.then(function () {
+                var layer = viewer.imageryLayers.addImageryProvider(shpProvider);
+                if (config.isFlyTo) {
+                    viewer.flyTo(layer);
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>

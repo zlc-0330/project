@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+  <style>
+    #canvas-a {
+      top: 10px;
+      display: none;
+    }
+
+    #canvas-b {
+      top: 120px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body style="
+      margin: 0;
+      overflow: hidden;
+      background: #fff;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+    ">
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+  <canvas id="canvas-a" class="canvas" width="300" height="300"></canvas>
+
+  <script type="text/javascript">
+    const viewer = new Cesium.Viewer('map', {
+      imageryProvider: false,
+      baseLayerPicker: false,
+    });
+
+    var xyz = new Cesium.UrlTemplateImageryProvider({
+      "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+    })
+    viewer.imageryLayers.addImageryProvider(xyz)
+    viewer.scene.debugShowFramesPerSecond = true;
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+
+    let rotation = Cesium.Math.toRadians(30);
+
+    function getRotationValue () {
+      rotation -= 0.02;
+      return rotation;
+    }
+
+    function drawCanvas () {
+      let canvas = document.getElementById("canvas-a");
+      let context = canvas.getContext('2d');
+      let grd = context.createLinearGradient(175, 100, canvas.width, 150);
+      grd.addColorStop(0, "rgba(0,255,0,0)");
+      grd.addColorStop(1, "rgba(0,255,0,1)");
+      context.fillStyle = grd;
+      context.beginPath();
+      context.moveTo(150, 150);
+      context.arc(150, 150, 140, -90 / 180 * Math.PI, 0 / 180 * Math
+        .PI);
+      context.fill();
+      return canvas;
+    }
+
+    let i = 0;
+    viewer.entities.add({
+      name: 'Rotating rectangle with rotating texture coordinate',
+      rectangle: {
+        coordinates: new Cesium.CallbackProperty(function () {
+          return Cesium.Rectangle.fromDegrees(-75.0, 30.0, -70.0, 35.0)
+        }, false),
+        material: new Cesium.ImageMaterialProperty({
+          image: new Cesium.CallbackProperty(drawCanvas, false),
+          transparent: true
+        }),
+        rotation: new Cesium.CallbackProperty(getRotationValue, false),
+        stRotation: new Cesium.CallbackProperty(getRotationValue, false)
+      }
+    });
+
+    viewer.zoomTo(viewer.entities);
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- 1. 引入 Cesium 样式（CDN） -->
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+    <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+    <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+    <script type="text/javascript">
+
+        const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+
+        // 开启帧率
+        viewer.scene.debugShowFramesPerSecond = true;
+
+        // 加载xyz
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "credit": "mapbox",
+            "url": 'https://api.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.webp?sku=1016Ab1dNMw2X&access_token=pk.eyJ1IjoidHJhbXBqd2wiLCJhIjoiY2xhYXIxbHExMDN3dzN3cGliOHdrMThxMiJ9.6er2aYb1EBjSsK1-t9d2-w'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+
+
+    </script>
+</body>
+
+</html>

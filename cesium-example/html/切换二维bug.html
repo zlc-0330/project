@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+  <div style="position: absolute; left: 20px; top: 20px; z-index: 1000">
+    <button style="padding: 5px 10px;" onclick="to2()">2维</button>
+    <button  style="padding: 5px 10px;" onclick="to3()">3维</button>
+  </div>
+  <script type="text/javascript">
+            const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+    viewer.scene.debugShowFramesPerSecond = true;
+
+    viewer.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(-95, 40, 2000000),
+    });
+
+    function to2() {
+      viewer.scene.mode = 2
+    }
+    function to3() {
+      viewer.scene.mode = 3
+    }
+
+    // 有事！！！
+    var billboard = viewer.entities.add({
+      position: Cesium.Cartesian3.fromDegrees(-100, 40),
+      billboard: {
+        image: '/assets/icon/icon.png',
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 贴附地面
+        scale: 1,
+        show: true,
+        horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        width: 32,
+        height: 32,
+      }
+    });
+
+    // 没事！！！
+    const billboardCollection = viewer.scene.primitives.add(
+      new Cesium.BillboardCollection()
+    );
+    billboardCollection.add({
+      position: Cesium.Cartesian3.fromDegrees(-90, 40),
+      image: '/assets/icon/icon.png',
+      width: 32,
+      height: 32,
+    });
+  </script>
+</body>
+
+</html>

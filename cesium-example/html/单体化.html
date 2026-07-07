@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="/utils/turf.min.js"></script>
+</head>
+
+<body style="
+      margin: 0;
+      overflow: hidden;
+      background: #fff;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+    ">
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+
+  <script type="text/javascript">
+    const viewer = new Cesium.Viewer('map', {
+      imageryProvider: false,
+      baseLayerPicker: false,
+    });
+
+    var xyz = new Cesium.UrlTemplateImageryProvider({
+      "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+    })
+    viewer.imageryLayers.addImageryProvider(xyz)
+    viewer.scene.debugShowFramesPerSecond = true;
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+
+    const tileset = new Cesium.Cesium3DTileset({
+      url: "/data/3ds2/tileset.json",
+    });
+    tileset.readyPromise
+      .then(function (tileset) {
+        viewer.scene.primitives.add(tileset);
+        viewer.zoomTo(tileset);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+
+    let features = [];
+
+    let myEntityCollection = new Cesium.CustomDataSource("clickEntityCollection");
+    viewer.dataSources.add(myEntityCollection);
+
+    axios
+      .get("/data/tjp.json") //读取区域json
+      .then((response) => {
+        features = response.data.features;
+        features.forEach((item) => {
+          let degreesArray = getDegreesArray(item);
+          var entity1 = new Cesium.Entity({
+            beof: '建筑',
+            polygon: {
+              hierarchy: Cesium.Cartesian3.fromDegreesArray(degreesArray),
+              material: Cesium.Color.WHITE.withAlpha(0),
+              classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+            },
+          });
+
+          myEntityCollection.entities.add(entity1);
+        });
+      });
+
+    //获取坐标串 不带高度 工具类
+    function getDegreesArray (feature) {
+      let degreesArray = [];
+      let coordinates = feature.geometry.coordinates[0];
+      for (let i = 0; i < coordinates.length; i++) {
+        const element = coordinates[i];
+        degreesArray.push(element[0]);
+        degreesArray.push(element[1]);
+      }
+      return degreesArray;
+    }
+
+    //注册点击事件
+    var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    //初始化上一次高亮的建筑
+    var entityBuild
+    handler.setInputAction(function (e) {
+      console.log(new Date().getTime())
+
+      var pick = viewer.scene.pick(e.position);
+      var cartesian = viewer.scene.pickPosition(e.position);
+      if (pick && pick.id) {
+        //如果选中的是建筑
+        if (pick.id.beof == "建筑") {
+          //则将上一次的建筑颜色变为无色
+          if (entityBuild) {
+            entityBuild.material.color = Cesium.Color.WHITE.withAlpha(0)
+          }
+          //再高亮这次的建筑
+          entityBuild = pick.id.polygon
+          entityBuild.material.color = Cesium.Color.RED.withAlpha(1)
+          console.log(new Date().getTime())
+
+        }
+      } else {
+        //如果没选中则同样改为无色
+        if (entityBuild) {
+          entityBuild.material.color = Cesium.Color.WHITE.withAlpha(0)
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+  </script>
+</body>
+
+</html>

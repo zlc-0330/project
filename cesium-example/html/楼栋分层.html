@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+  <style>
+    button {
+      font-size: 20px;
+    }
+  </style>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+  <input id="floor" value="10" type="text">层
+  <button onclick="initFloor()">生成</button>
+  <button onclick="openFloorModel()">展开</button>
+  <button onclick="closeFloorModel()">合并</button>
+  <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+  <script type="text/javascript">
+    const viewer = new Cesium.Viewer('map', {
+      imageryProvider: false,
+      baseLayerPicker: false,
+    });
+
+    var xyz = new Cesium.UrlTemplateImageryProvider({
+      "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+    })
+    viewer.imageryLayers.addImageryProvider(xyz)
+    viewer.scene.debugShowFramesPerSecond = true;
+    viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
+    viewer.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(114.270556, 30.540943, 97.40),
+      orientation: {
+        heading: Cesium.Math.toRadians(291.9),
+        pitch: Cesium.Math.toRadians(-26.2),
+        roll: Cesium.Math.toRadians(360),
+      }
+    });
+
+    let floor = 10;
+    let x = 114.268997
+    let y = 30.541476
+
+    let floorArr = [];
+    let arr = [];
+
+    initFloor();
+    function initFloor () {
+      viewer.entities.removeAll()
+      floorArr = []
+      floor = document.getElementById('floor').value;
+      for (let i = 0; i < floor; i++) {
+        var position = Cesium.Cartesian3.fromDegrees(x, y, i * 3);
+        var entity = viewer.entities.add({
+          position: position,
+          model: {
+            uri: '//data.mars3d.cn/gltf/mars/floor/floor.glb',
+            scale: 1,
+          }
+        });
+        floorArr.push({
+          pos: [x, y, i * 3],
+          entity: entity
+        });
+      }
+      var position1 = Cesium.Cartesian3.fromDegrees(x, y, floor * 3);
+      var entity1 = viewer.entities.add({
+        position: position1,
+        model: {
+          uri: '//data.mars3d.cn/gltf/mars/floor/top.glb',
+          scale: 1,
+        }
+      });
+      floorArr.push({
+        pos: [x, y, floor * 3],
+        entity: entity1
+      });
+    }
+
+    function closeFloorModel () {
+      for (let i = 0; i < floorArr.length; i++) {
+        const element = floorArr[i];
+        element.entity.position = Cesium.Cartesian3.fromDegrees(element.pos[0], element.pos[1], element.pos[2] / 1);
+      }
+    }
+
+    function openFloorModel () {
+      for (let i = 0; i < floorArr.length; i++) {
+        const element = floorArr[i];
+        element.entity.position = Cesium.Cartesian3.fromDegrees(element.pos[0], element.pos[1], element.pos[2] * 2);
+      }
+    }
+  </script>
+</body>
+
+</html>

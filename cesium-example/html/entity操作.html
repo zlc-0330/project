@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- 1. 引入 Cesium 样式（CDN） -->
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+    <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+    <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+    <script type="text/javascript">
+
+        const viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+        });
+
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+
+        // 开启帧率
+        viewer.scene.debugShowFramesPerSecond = true;
+
+        // add、remove、removeById、removeAll
+
+        var hello = viewer.entities.add({
+            name: '贴地',
+            id: 'test',
+            position: Cesium.Cartesian3.fromDegrees(-75, 39),
+            label: {
+                text: '贴地',
+                font: '14pt monospace',
+                outlineWidth: 2,
+                verticalOrigin: Cesium.VerticalOrigin.TOP,
+                heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+                disableDepthTestDistance: Number.POSITIVE_INFINITY,
+                showBackground: true,
+                backgroundColor: Cesium.Color.WHITE,
+                fillColor: Cesium.Color.RED
+            }
+        });
+
+        var entity1 = viewer.entities.getById('test');
+
+        // viewer.entities.remove(hello); //通过对象删除
+        // viewer.entities.remove(entity1);   //通过id删除
+        // viewer.entities.removeById("test"); //通过id删除
+        // viewer.entities.removeAll();   //删除所有
+
+    </script>
+</body>
+
+</html>

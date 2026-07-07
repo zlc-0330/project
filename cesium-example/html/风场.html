@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- 1. 引入 Cesium 样式（CDN） -->
+  <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+  <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+  <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+    <script src="/utils/cesium-wind.js"></script>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+
+    <script>
+        window.viewer = new Cesium.Viewer('map', {
+            imageryProvider: false,
+            baseLayerPicker: false,
+            infoBox: false,
+            selectionIndicator: false,
+            animation: false,//是否创建动画小器件，左下角仪表  
+            baseLayerPicker: false,//是否显示图层选择器  
+            fullscreenButton: false,//是否显示全屏按钮  
+            geocoder: false,//是否显示geocoder小器件，右上角查询按钮  
+            homeButton: false,//是否显示Home按钮  
+            infoBox: false,//是否显示信息框  
+            sceneModePicker: false,//是否显示3D/2D选择器  
+            selectionIndicator: false,//是否显示选取指示器组件  
+            timeline: false,//是否显示时间轴  
+            navigationHelpButton: false,//是否显示右上角的帮助按钮  
+            scene3DOnly: true,//如果设置为true，则所有几何图形以3D模式绘制以节约GPU资源  
+        });
+        var xyz = new Cesium.UrlTemplateImageryProvider({
+            "credit": "安徽",
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+
+        viewer.scene.debugShowFramesPerSecond = true;
+
+        viewer.camera.setView({
+            destination: Cesium.Rectangle.fromDegrees(100, 20, 120, 40),
+        });
+
+        // ！！！！！！！！！！！！！！教程！！！！！！！！！！！！！！！！！！！！！
+        /*
+            1、数据获取 
+                数据源：https://nomads.ncep.noaa.gov/ （记得要grid转json）
+                简单方式：方式https://github.com/jiawanlong/wind-js-server（记得配java_home）
+
+            2、利用WindLayer插件
+                链接：https://github.com/jiawanlong/cesium-wind
+        
+        */
+
+        // 第一组数据代表横向向风，第二组数据代表纵向向风
+// lo1横向起点，la1纵向起点
+// lo2横向终点，la2纵向终点
+// nx横向数量，ny纵向数量
+// dx横向间隔，dy纵向间隔，
+
+        const windOptions = {
+            colorScale: [
+                'rgb(36,104, 180)',
+                'rgb(60,157, 194)',
+                'rgb(128,205,193 )',
+                'rgb(151,218,168 )',
+                'rgb(198,231,181)',
+                'rgb(238,247,217)',
+                'rgb(255,238,159)',
+                'rgb(252,217,125)',
+                'rgb(255,182,100)',
+                'rgb(252,150,75)',
+                'rgb(250,112,52)',
+                'rgb(245,64,32)',
+                'rgb(237,45,28)',
+                'rgb(220,24,32)',
+                'rgb(180,0,35)',
+            ],
+            frameRate: 16,
+            maxAge: 60,
+            globalAlpha: 0.9,
+            velocityScale: 1 / 30,
+            paths: 2000
+        };
+        let windLayer;
+        fetch('/data/2024122600.json')
+            .then(res => res.json())
+            .then(res => {
+                windLayer = new CesiumWind.WindLayer(res, { windOptions });
+                windLayer.addTo(viewer);
+                // windLayer.remove();
+            });
+
+    </script>
+
+</body>
+
+</html>

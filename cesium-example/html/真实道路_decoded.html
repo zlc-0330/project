@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- 1. 引入 Cesium 样式（CDN） -->
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+    <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+    <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+</head>
+
+<body style="overflow: hidden;margin: 0;">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100vh"></div>
+
+    <script type="text/javascript">
+        // Cesium.Ion.defaultAccessToken =
+        //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjOWM5N2FlYy0wNTIyLTRhZDAtYTM2Yi04ZGEzYzMzNTRjYmQiLCJpZCI6NTcwNzEsImlhdCI6MTYyMjAxMjY3MH0.IRCEryIGGPZeCGqJ8lpMESuZO9DTIlLnF-WS-w9YYzc";
+
+        // 初始化 Cesium Viewer
+        const viewer = new Cesium.Viewer('map', {
+            terrainProvider: undefined
+        });
+
+        // 隐藏不必要的 UI 元素
+        viewer.cesiumWidget.creditContainer.style.display = "none";
+        viewer.scene.globe.enableLighting = false;
+
+        // 设置初始相机视角
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(119.980752, 30.00317, 15.7),
+            orientation: {
+                heading: Cesium.Math.toRadians(100),
+                pitch: Cesium.Math.toRadians(-14),
+                roll: 0.0
+            }
+        });
+
+        // 定义路径坐标 (原始数据)
+        const pathCoordinates = [
+            [119.96584341965223, 30.003878078536786],
+            [119.96859086337929, 30.00400221392445],
+            [119.969745586106, 30.00400911033023],
+            [119.9721187331437, 30.003995311344767],
+            [119.97453966906573, 30.003884968778237],
+            [119.97779659712774, 30.00358151577251],
+            [119.98074313098033, 30.00320910756568],
+            [119.98405599291016, 30.00270566190366],
+            [119.98625914197953, 30.00238839269703],
+            [119.99052368919865, 30.001741521078188]
+        ];
+
+        let controlledEntity = null;
+
+        // 遍历路径段
+        for (let i = 0; i < pathCoordinates.length - 1; i++) {
+            const startCoord = pathCoordinates[i];
+            const endCoord = pathCoordinates[i + 1];
+
+            // 使用 Turf 创建点和线
+            const startPoint = turf.point([startCoord[0], startCoord[1]]);
+            const endPoint = turf.point([endCoord[0], endCoord[1]]);
+            const lineString = turf.lineString([startPoint.geometry.coordinates, endPoint.geometry.coordinates]);
+
+            // 计算两点间距离 (米)
+            const distance = turf.distance(startPoint, endPoint, { units: 'meters' });
+
+            // 计算方位角 (度)
+            const bearing = turf.bearing(startPoint, endPoint);
+
+            // 添加道路模型（沿路线铺设）
+            // 根据路段长度动态调整分段数量，确保每段长度合适
+            const segmentLength = Math.min(distance, 8); // 每段最大50米
+            // const segmentLength = Math.min(distance, 50); // 每段最大50米
+            const roadSegments = Math.max(1, Math.ceil(distance / segmentLength));
+
+            for (let r = 0; r < roadSegments; r++) {
+                const distAlong = r * segmentLength;
+                const nextDistAlong = Math.min((r + 1) * segmentLength, distance);
+
+                // 获取当前段的起点和终点
+                const roadDestPoint = turf.along(lineString, distAlong, { units: 'meters' });
+                const nextRoadDestPoint = turf.along(lineString, nextDistAlong, { units: 'meters' });
+
+                // 计算当前道路段的朝向
+                const segmentBearing = turf.bearing(
+                    turf.point([roadDestPoint.geometry.coordinates[0], roadDestPoint.geometry.coordinates[1]]),
+                    turf.point([nextRoadDestPoint.geometry.coordinates[0], nextRoadDestPoint.geometry.coordinates[1]])
+                );
+
+                // 计算当前段的中点位置
+                const midDistAlong = (distAlong + nextDistAlong) / 2;
+                const midPoint = turf.along(lineString, midDistAlong, { units: 'meters' });
+
+                const roadCart = Cesium.Cartesian3.fromDegrees(
+                    midPoint.geometry.coordinates[0],
+                    midPoint.geometry.coordinates[1],
+                    0.1
+                );
+                const roadHpr = new Cesium.HeadingPitchRoll(
+                    Cesium.Math.toRadians(segmentBearing),
+                    0,
+                    0
+                );
+                // 拼接道路
+                viewer.entities.add({
+                    position: roadCart,
+                    orientation: Cesium.Transforms.headingPitchRollQuaternion(roadCart, roadHpr),
+                    model: {
+                        uri: '/data/road/highway/scene.gltf',
+                        // scale: 0.5,
+                        // minimumPixelSize: 128
+                    }
+                });
+            }
+
+            // 1. 沿路径生成无人机 (每 39.9 米一个)
+            const droneCount = Math.floor(distance / 39.9);
+            for (let j = 0; j < droneCount; j++) {
+                const distAlong = j * 39.9;
+                const destinationPoint = turf.along(lineString, distAlong, { units: 'meters' });
+
+                const posData = {
+                    x: destinationPoint.geometry.coordinates[0],
+                    y: destinationPoint.geometry.coordinates[1],
+                    z: 1.0,
+                    heading: 0.0,
+                    pitch: 0.0,
+                    roll: 0.0
+                };
+
+                const position = Cesium.Cartesian3.fromDegrees(posData.x, posData.y, posData.z);
+                const hpr = new Cesium.HeadingPitchRoll(
+                    Cesium.Math.toRadians(bearing),
+                    Cesium.Math.toRadians(posData.pitch),
+                    Cesium.Math.toRadians(posData.roll)
+                );
+                const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+                // 添加路标
+                const droneEntity = new Cesium.Entity({
+                    position: position,
+                    orientation: orientation,
+                    model: {
+                        uri: '/data/road/highway_sign/scene.gltf',
+                        scale: 2.0
+                    }
+                });
+                // viewer.entities.add(droneEntity);
+
+                // 每隔  一个路标
+                if (j % 8 === 0 && j !== 0) {
+                    const offset = new Cesium.Cartesian3(0.0, 0.0, 0.0);
+                    // const offset = new Cesium.Cartesian3(0.0, 2.0, -1.0);
+                    const hprSign = new Cesium.HeadingPitchRoll(
+                        Cesium.Math.toRadians(bearing + 90),
+                        Cesium.Math.toRadians(posData.pitch),
+                        Cesium.Math.toRadians(posData.roll)
+                    );
+                    const orientationSign = Cesium.Transforms.headingPitchRollQuaternion(position, hprSign);
+
+                    const signEntity = new Cesium.Entity({
+                        position: Cesium.Cartesian3.add(position, offset, new Cesium.Cartesian3()),
+                        orientation: orientationSign,
+                        model: {
+                            uri: '/data/road/highway_sign/scene.gltf',
+                            scale: 1.3
+                        }
+                    });
+                    viewer.entities.add(signEntity);
+                }
+            }
+
+            // 2. 沿路径生成围栏 (每 5 米一个)
+            const fenceCount = Math.floor(distance / 5.0);
+            for (let k = 0; k < fenceCount; k++) {
+                const distAlong = k * 5.0;
+                const destinationPoint = turf.along(lineString, distAlong, { units: 'meters' });
+
+                const posData = {
+                    x: destinationPoint.geometry.coordinates[0],
+                    y: destinationPoint.geometry.coordinates[1],
+                    z: 1.0,
+                    heading: 0.0,
+                    pitch: 0.0,
+                    roll: 0.0
+                };
+
+                const position = Cesium.Cartesian3.fromDegrees(posData.x, posData.y, posData.z);
+                const hpr = new Cesium.HeadingPitchRoll(
+                    Cesium.Math.toRadians(bearing +90),
+                    // Cesium.Math.toRadians(bearing + 270),
+                    Cesium.Math.toRadians(posData.pitch),
+                    Cesium.Math.toRadians(posData.roll)
+                );
+                const rightHpr = new Cesium.HeadingPitchRoll(
+                    Cesium.Math.toRadians(bearing - 90),
+                    // Cesium.Math.toRadians(bearing + 270),
+                    Cesium.Math.toRadians(posData.pitch),
+                    Cesium.Math.toRadians(posData.roll)
+                );
+                const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+                const rightOrientation = Cesium.Transforms.headingPitchRollQuaternion(position, rightHpr);
+                // 左侧围栏
+                const offsetLeft = new Cesium.Cartesian3(-4.0, -5.0, 5.0);
+                // const offsetLeft = new Cesium.Cartesian3(0.0, -9.0, -11.0);
+                const fenceLeft = new Cesium.Entity({
+                    position: Cesium.Cartesian3.add(position, offsetLeft, new Cesium.Cartesian3()),
+                    orientation: orientation,
+                    model: {
+                        uri: '/data/road/highway_fence/scene.gltf',
+                        scale: 1.5
+                    }
+                });
+                viewer.entities.add(fenceLeft);
+
+                // 右侧围栏
+                // const offsetRight = new Cesium.Cartesian3(0.0, 9.0, -11.0);
+                const offsetRight = new Cesium.Cartesian3(2.0, 5.0, -5.0);
+
+                const fenceRight = new Cesium.Entity({
+                    position: Cesium.Cartesian3.add(position, offsetRight, new Cesium.Cartesian3()),
+                    orientation: rightOrientation,
+                    model: {
+                        uri: '/data/road/highway_fence/scene.gltf',
+                        scale: 1.5
+                    }
+                });
+                viewer.entities.add(fenceRight);
+            }
+
+            // 3. 沿路径生成树木 (每 100 米一个)
+            const treeCount = Math.floor(distance / 100.0);
+            for (let t = 0; t < treeCount; t++) {
+                const distAlong = t * 100.0;
+                const destinationPoint = turf.along(lineString, distAlong, { units: 'meters' });
+
+                const posData = {
+                    x: destinationPoint.geometry.coordinates[0],
+                    y: destinationPoint.geometry.coordinates[1],
+                    z: 1.0,
+                    heading: 0.0,
+                    pitch: 0.0,
+                    roll: 0.0
+                };
+
+                const position = Cesium.Cartesian3.fromDegrees(posData.x, posData.y, posData.z);
+                const hpr = new Cesium.HeadingPitchRoll(
+                    Cesium.Math.toRadians(bearing + 270),
+                    Cesium.Math.toRadians(posData.pitch),
+                    Cesium.Math.toRadians(posData.roll)
+                );
+                const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+                // 左侧树
+                // const offsetLeftTree = new Cesium.Cartesian3(-20.0, 0.0, 0.0);
+                const offsetLeftTree =new Cesium.Cartesian3(2.0, -3.8, 5.0);
+                const treeLeft = new Cesium.Entity({
+                    position: Cesium.Cartesian3.add(position, offsetLeftTree, new Cesium.Cartesian3()),
+                    orientation: orientation,
+                    model: {
+                        uri: '/data/road/tree/scene.gltf',
+                        scale: 0.02,
+                        minimumPixelSize: 128
+                    }
+                });
+                viewer.entities.add(treeLeft);
+
+                // 右侧树
+                const offsetRightTree = new Cesium.Cartesian3(2.0, 3.8, -6.0);
+                const treeRight = new Cesium.Entity({
+                    position: Cesium.Cartesian3.add(position, offsetRightTree, new Cesium.Cartesian3()),
+                    orientation: orientation,
+                    model: {
+                        uri: '/data/road/tree/scene.gltf',
+                        scale: 0.02,
+                        minimumPixelSize: 128
+                    }
+                });
+                viewer.entities.add(treeRight);
+            }
+        }
+
+        // --- 初始化可控制实体 (主角无人机) ---
+        function initControlledEntity () {
+            const startPos = new Cesium.Cartesian3(-2762485.4061335744, 4788363.123749852, 3170672.7616516175);
+            // const startPos = new Cesium.Cartesian3(-2762485.4061335744, 4788363.123749852, 3170669.7616516175);
+            const hpr = new Cesium.HeadingPitchRoll(
+                Cesium.Math.toRadians(100),
+                Cesium.Math.toRadians(0),
+                Cesium.Math.toRadians(0)
+            );
+            const orientation = Cesium.Transforms.headingPitchRollQuaternion(startPos, hpr);
+
+            controlledEntity = viewer.entities.add({
+                position: startPos,
+                orientation: orientation,
+                model: {
+                    uri: '/data/su7/scene.gltf',
+                    scale: 0.8
+                }
+            });
+        }
+
+        // --- 键盘控制逻辑 ---
+        document.addEventListener('keydown', (e) => {
+            if (!controlledEntity) return;
+
+            const speed = 0.002;
+            const turnSpeed = 5; // 转向速度（度）
+            let moveDirection = null;
+            let turnDirection = 0;
+
+            switch (e.key.toLowerCase()) {
+                case 'w': moveDirection = 0; break; // 前进
+                case 's': moveDirection = 180; break; // 后退
+                case 'a': turnDirection = -turnSpeed; break; // 左转
+                case 'd': turnDirection = turnSpeed; break; // 右转
+            }
+
+            if (moveDirection !== null) {
+                moveEntity(moveDirection, speed, false);
+            } else if (turnDirection !== 0) {
+                rotateEntity(turnDirection);
+            }
+        });
+
+        // --- 移动实体 ---
+        function moveEntity (moveDirection, speed, isRotation) {
+            if (!controlledEntity) return;
+
+            const carto = viewer.scene.globe.ellipsoid.cartesianToCartographic(controlledEntity.position.getValue());
+            if (!carto) return;
+
+            const lon = Cesium.Math.toDegrees(carto.longitude);
+            const lat = Cesium.Math.toDegrees(carto.latitude);
+
+            const hpr = Cesium.HeadingPitchRoll.fromQuaternion(controlledEntity.orientation.getValue());
+            const currentBearing = Cesium.Math.toDegrees(hpr.heading);
+
+            const newPos = turf.destination(turf.point([lon, lat]), speed, currentBearing + moveDirection, { units: 'kilometers' });
+            const newCart = Cesium.Cartesian3.fromDegrees(newPos.geometry.coordinates[0], newPos.geometry.coordinates[1], 1.5);
+
+            controlledEntity.position = newCart;
+            controlledEntity.orientation = Cesium.Transforms.headingPitchRollQuaternion(newCart, new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(currentBearing), 0, 0));
+
+            // 更新相机位置
+            updateCameraPosition(newCart, currentBearing);
+        }
+
+        // --- 旋转实体 ---
+        function rotateEntity (turnAngle) {
+            if (!controlledEntity) return;
+
+            const hpr = Cesium.HeadingPitchRoll.fromQuaternion(controlledEntity.orientation.getValue());
+            const newHeading = Cesium.Math.toDegrees(hpr.heading) + turnAngle;
+
+            controlledEntity.orientation = Cesium.Transforms.headingPitchRollQuaternion(
+                controlledEntity.position.getValue(),
+                new Cesium.HeadingPitchRoll(Cesium.Math.toRadians(newHeading), 0, 0)
+            );
+
+            // 更新相机位置
+            updateCameraPosition(controlledEntity.position.getValue(), newHeading);
+        }
+
+        // --- 更新相机位置 ---
+        function updateCameraPosition (entityPosition, heading) {
+            // 计算相机相对于车辆的位置
+            const offset = new Cesium.Cartesian3(-20, 0, 8); // 相机相对于车辆的偏移（东、北、上）
+
+            // 创建ENU变换矩阵
+            const transform = Cesium.Transforms.eastNorthUpToFixedFrame(entityPosition);
+
+            // 将偏移量转换到世界坐标系
+            const cameraOffset = Cesium.Matrix4.multiplyByPointAsVector(transform, offset, new Cesium.Cartesian3());
+            const cameraPosition = Cesium.Cartesian3.add(entityPosition, cameraOffset, new Cesium.Cartesian3());
+
+            // 设置相机位置和朝向
+            viewer.camera.setView({
+                destination: cameraPosition,
+                orientation: {
+                    heading: Cesium.Math.toRadians(heading),
+                    pitch: Cesium.Math.toRadians(-15),
+                    roll: 0.0
+                }
+            });
+        }
+
+        // --- 初始化 ---
+        initControlledEntity();
+    </script>
+</body>
+</html>

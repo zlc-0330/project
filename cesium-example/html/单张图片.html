@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- 1. 引入 Cesium 样式（CDN） -->
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
+    <!-- 2. 引入 Cesium 核心 JS（CDN） -->
+    <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
+</head>
+
+<body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
+    <div id="map" style="margin: 0 auto; width: 100%; height: 100%"></div>
+    <script>
+
+        const viewer = new Cesium.Viewer('map', {
+          // 添加这两行，就不会找烦人的defaultAccessToken了
+            imageryProvider: false,
+            baseLayerPicker: false,
+   
+        });
+       var xyz = new Cesium.UrlTemplateImageryProvider({
+            "url": '//data.mars3d.cn/tile/img/{z}/{x}/{y}.jpg'
+        })
+        viewer.imageryLayers.addImageryProvider(xyz)
+        viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
+
+        // ImageryLayer
+        // ImageryLayerCollection
+        // ImageryProvider
+        // ImageryProvider子类
+
+        // https://cesium.com/learn/cesiumjs/ref-doc/ImageryLayer.html#.ConstructorOptions
+
+        var imageryProvider = new Cesium.SingleTileImageryProvider({
+            "url": "/assets/image/world_b.jpg",
+        })
+
+        let options = {
+            alpha: 0.9,
+            hue: 0.3,
+            saturation: 0.3,
+            gamma: 0.3,
+        }
+
+        var imageryLayer = new Cesium.ImageryLayer(imageryProvider, options);
+        viewer.imageryLayers.add(imageryLayer)
+
+      
+        // imageryLayer.alpha = 0.5
+    </script>
+</body>
+
+</html>
