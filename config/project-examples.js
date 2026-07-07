@@ -2,7 +2,7 @@
  * @Author: zhanglichun 954751293@qq.com
  * @Date: 2026-07-03 10:36:51
  * @LastEditors: zhanglichun 954751293@qq.com
- * @LastEditTime: 2026-07-07 13:29:45
+ * @LastEditTime: 2026-07-07 14:00:49
  * @FilePath: \project\config\project-examples.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -59,7 +59,7 @@ export default [
                 openUrl: HOST + 'cesium-example/',  // 直接打开打包后的页面
                 githubUrl: 'https://github.com/zlc-0330/cesium-example',
                 // openUrl: 'https://gltf-viewer.donmccurdy.com/',
-                image: HOST + 'threeExamples/tools/gltf_viewer.jpg'
+                image: HOST + 'files/images/cesium-example.png',
             },
         ]
     },
