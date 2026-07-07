@@ -2,7 +2,7 @@
  * @Author: zhanglichun 954751293@qq.com
  * @Date: 2026-07-03 10:36:51
  * @LastEditors: zhanglichun 954751293@qq.com
- * @LastEditTime: 2026-07-03 15:18:33
+ * @LastEditTime: 2026-07-07 09:57:50
  * @FilePath: \project\config\project-examples.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -49,17 +49,18 @@ export default [
         name: 'cesium',
         name_en: 'cesium',
         children: [
-            // 外部链接
-            // {
-            //     id: 'cesiumExample',
-            //     name: 'cesium示例',
-            //     name_en: 'cesium示例',
-            //     tag: TEXTS['smartCity'],
-            //     author: 'zlc-0330',
-            //     githubUrl: 'https://github.com/donmccurdy/three-gltf-viewer',
-            //     openUrl: 'https://gltf-viewer.donmccurdy.com/',
-            //     image: HOST + 'threeExamples/tools/gltf_viewer.jpg'
-            // },
+
+            {
+                id: 'cesiumExample',
+                name: 'cesium示例',
+                name_en: 'cesium示例',
+                // tag: TEXTS['smartCity'],
+                author: 'zlc-0330',
+                openUrl: HOST + 'cesium-example/index.html',  // 直接打开打包后的页面
+                githubUrl: 'https://github.com/zlc-0330/cesium-example',
+                // openUrl: 'https://gltf-viewer.donmccurdy.com/',
+                image: HOST + 'threeExamples/tools/gltf_viewer.jpg'
+            },
         ]
     },
 
