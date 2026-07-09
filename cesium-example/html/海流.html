@@ -10,6 +10,7 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
@@ -35,22 +36,24 @@
 
     // 加载底图
     var xyz = new Cesium.UrlTemplateImageryProvider({
-      "url": '/libs/ocean/SeaSpeed_202307271200/{z}/{x}/{y}.png'
+      "url": config.libs + 'ocean/SeaSpeed_202307271200/{z}/{x}/{y}.png'
     })
     viewer.imageryLayers.addImageryProvider(xyz)
 
 
     // 加载洋流
-    import LayerOceanCurrent from "/libs/ocean/layers/LayerOceanCurrent/LayerOceanCurrent.js"
-    console.log(LayerOceanCurrent)
+    import(config.libs + 'ocean/layers/LayerOceanCurrent/LayerOceanCurrent.js').then((module) => {
+      const LayerOceanCurrent = module.default;
+      console.log(LayerOceanCurrent)
 
-    let seaWave = new LayerOceanCurrent({});
-    axios({
-      method: "get",
-      url: "/libs/ocean/SeawaveDirection_202307251200_0200.json",
-    }).then((res) => {
-      seaWave.load(res.data.data);
-      seaWave.addToMap(viewer);
+      let seaWave = new LayerOceanCurrent({});
+      axios({
+        method: "get",
+        url: config.libs + 'ocean/SeawaveDirection_202307251200_0200.json',
+      }).then((res) => {
+        seaWave.load(res.data.data);
+        seaWave.addToMap(viewer);
+      });
     });
 
     // seaWave.clean();

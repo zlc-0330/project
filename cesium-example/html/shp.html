@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <script src="../config.js"></script>
     <meta charset="UTF-8" />
        <!-- 1. 引入 Cesium 样式（CDN） -->
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
@@ -30,7 +31,7 @@
             "features": []
         };
 
-        shapefile.open('/data/shp2/唐家泊果园.shp')
+        shapefile.open(`${config.data}shp2/唐家泊果园.shp`)
             .then(function (source) {
                 source.read().then(function (result) {
                     geojson.features.push(result.value)

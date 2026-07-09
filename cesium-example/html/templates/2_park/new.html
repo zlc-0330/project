@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <script src="../config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -13,13 +14,13 @@
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
     <script type="text/javascript" src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
 
-    <script src="/utils/CircleScanSystem_fixed.js"></script>
-    <script src="/utils/CircleWaveMaterialProperty.js"></script>
-    <script src="/utils/DynamicWallMaterialProperty.js"></script>
-    <script src="/utils/popup.js"></script>
-    <script src="/utils/latlng.js"></script>
-    <script src="/libs/SuperMap3D/SuperMap3D.js"></script>
-    <script src="/utils/Roaming.js"></script>
+    <script>document.write('<script src="' + config.utils + 'CircleScanSystem_fixed.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'CircleWaveMaterialProperty.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'DynamicWallMaterialProperty.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'popup.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'latlng.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.libs + 'SuperMap3D/SuperMap3D.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'Roaming.js"><\/script>');</script>
 
 </head>
 
@@ -448,7 +449,7 @@
 
 <script src="./js/china.js"></script>
 <script src="./js/mymap.js"></script>
-<script src="/utils/cesium.map.min.js"></script>
+<script>document.write('<script src="' + config.utils + 'cesium.map.min.js"><\/script>');</script>
 
 <script src="./js/map.js"></script>
 

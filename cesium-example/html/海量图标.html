@@ -1,13 +1,22 @@
+<!--
+ * @Author: zhanglichun 954751293@qq.com
+ * @Date: 2026-06-17 14:46:52
+ * @LastEditors: zhanglichun 954751293@qq.com
+ * @LastEditTime: 2026-07-07 15:12:12
+ * @FilePath: \cesium-example\public\html\海量图标.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
 <!DOCTYPE html>
 <html>
 
 <head>
+    <script src="../config.js"></script>
     <meta charset="UTF-8" />
     <!-- 1. 引入 Cesium 样式（CDN） -->
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
     <!-- 2. 引入 Cesium 核心 JS（CDN） -->
     <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
-    <script src="/utils/turf.min.js"></script>
+    <script>document.write('<script src="' + config.utils + 'turf.min.js"><\/script>');</script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
 
@@ -50,7 +59,7 @@
                 //根据距离缩放
                 scaleByDistance: new Cesium.NearFarScalar(2000000, 1, 8000000, 0.1),
                 position: Cesium.Cartesian3.fromDegrees(cor[0], cor[1]),
-                image: '/assets/icon/icon.png',
+                image: `${config.assets}icon/icon.png`,
                 width: 32,
                 height: 32,
             });

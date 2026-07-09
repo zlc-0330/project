@@ -2,12 +2,13 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.72/Build/Cesium/Widgets/widgets.css">
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.72/Build/Cesium/Cesium.js"></script>
-  <script src="/libs/ammolibs/ammo/ammo.js"></script>
+  <script>document.write('<script src="' + config.libs + 'ammolibs/ammo/ammo.js"><\/script>');</script>
 </head>
 
 <body style="
@@ -24,11 +25,11 @@
     操作提示：鼠标左键单击进行发射
   </div>
 
-  <script src="/libs/ammolibs/three/three.min.js"></script>
-  <script src="/libs/ammolibs/ammo/ex/ConvexObjectBreaker.js"></script>
-  <script src="/libs/ammolibs/ammo/ex/QuickHull.js"></script>
-  <script src="/libs/ammolibs/ammo/ex/geometries/ConvexGeometry.js"></script>
-  <script src="/libs/ammolibs/meshVisualizer/CesiumMeshVisualizer.js"></script>
+  <script>document.write('<script src="' + config.libs + 'ammolibs/three/three.min.js"><\/script>');</script>
+  <script>document.write('<script src="' + config.libs + 'ammolibs/ammo/ex/ConvexObjectBreaker.js"><\/script>');</script>
+  <script>document.write('<script src="' + config.libs + 'ammolibs/ammo/ex/QuickHull.js"><\/script>');</script>
+  <script>document.write('<script src="' + config.libs + 'ammolibs/ammo/ex/geometries/ConvexGeometry.js"><\/script>');</script>
+  <script>document.write('<script src="' + config.libs + 'ammolibs/meshVisualizer/CesiumMeshVisualizer.js"><\/script>');</script>
   <script>
 
     const viewer = new Cesium.Viewer('cesiumContainer', {

@@ -2,12 +2,13 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
-  <script type="text/javascript" src="/libs/three/three.js"></script>
+  <script>document.write('<script src="' + config.libs + 'three/three.js"><\/script>');</script>
 </head>
 
 <body style="
@@ -23,7 +24,7 @@
   <script type="importmap">
         {
             "imports": {
-                "three": "/libs/three/build/three.module.js"
+                "three": "https://zlc-0330.github.io/project-file-server/cesiumExample/libs/three/build/three.module.js"
             }
         }
     </script>

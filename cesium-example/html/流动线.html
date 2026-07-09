@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
@@ -122,7 +123,7 @@
           -80, 31, 250000,
           -100, 31, 250000,
         ]),
-        material: new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.WHITE, 3000, 1, "/assets/icon/line.png")
+        material: new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.WHITE, 3000, 1, `${config.assets}icon/line.png`)
       }
     });
 
@@ -135,7 +136,7 @@
           -80, 40.1, 250000,
           -100, 40.1, 250000,
         ]),
-        material: new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.WHITE, 1000, 1, "/assets/icon/line1.png")
+        material: new Cesium.PolylineTrailLinkMaterialProperty(Cesium.Color.WHITE, 1000, 1, `${config.assets}icon/line1.png`)
       }
     });
 

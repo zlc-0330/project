@@ -2,12 +2,13 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
-  <script src="/utils/CesiumNavigation.umd.js"></script>
+  <script>document.write('<script src="' + config.utils + 'CesiumNavigation.umd.js"><\/script>');</script>
   <style>
     /*
         自定义指南针需要调样式

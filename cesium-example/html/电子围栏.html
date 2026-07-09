@@ -2,8 +2,9 @@
 <html>
 
 <head>
-  <meta charset="UTF-8" />
-  <!-- 1. 引入 Cesium 样式（CDN） -->
+    <script src="../config.js"></script>
+    <meta charset="UTF-8" />
+    <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
@@ -204,7 +205,7 @@
           // }), 
 
           // 动态
-          material: new Cesium.DynamicWallMaterialProperty({ trailImage: "/assets/icon/wall.png", color: Cesium.Color.CYAN, duration: 1500 })
+          material: new Cesium.DynamicWallMaterialProperty({ trailImage: `${config.assets}icon/wall.png`, color: Cesium.Color.CYAN, duration: 1500 })
         },
       });
     }

@@ -2,13 +2,14 @@
 <html>
 
 <head>
+    <script src="../config.js"></script>
     <meta charset="UTF-8" />
     <!-- 1. 引入 Cesium 样式（CDN） -->
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
     <!-- 2. 引入 Cesium 核心 JS（CDN） -->
     <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
-    <script src="/utils/turf.min.js"></script>
-    <script src="/utils/latlng.js"></script>
+    <script>document.write('<script src="' + config.utils + 'turf.min.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'latlng.js"><\/script>');</script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <style>
         * {
@@ -49,7 +50,7 @@
         });
 
 
-        axios.get('/data/hefei-road.json')//读取区域json
+        axios.get(`${config.data}hefei-road.json`)//读取区域json
             .then((response) => {
                 console.log(response.data.features)
                 response.data.features.forEach((k) => {
@@ -144,7 +145,7 @@
                         },],
                     },
                     material: new Cesium.ImageMaterialProperty({
-                        image: "/assets/icon/qqq.png",
+                        image: `${config.assets}icon/qqq.png`,
                         repeat: new Cesium.Cartesian2(50 / luKuan * 15, 50 / luKuan * 15)
                     }),
                 },
@@ -179,7 +180,7 @@
                         },],
                     },
                     material: new Cesium.ImageMaterialProperty({
-                        image: "/assets/icon/3333.jpg",
+                        image: `${config.assets}icon/3333.jpg`,
                         repeat: new Cesium.Cartesian2(50 / luKuan * 15, 50 / luKuan * 15)
                     }),
                     outline: false,
@@ -200,7 +201,7 @@
                 polygon: {
                     hierarchy: Cesium.Cartesian3.fromDegreesArray(kkkk1),
                     material: new Cesium.ImageMaterialProperty({
-                        image: "/assets/icon/1211.png",
+                        image: `${config.assets}icon/1211.png`,
                         repeat: new Cesium.Cartesian2(50, 50)
                     }),
                 },

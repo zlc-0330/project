@@ -2,13 +2,14 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-  <script src="/utils/turf.min.js"></script>
+  <script>document.write('<script src="' + config.utils + 'turf.min.js"><\/script>');</script>
 </head>
 
 <body style="
@@ -36,7 +37,7 @@
     viewer.scene.globe.depthTestAgainstTerrain = true;
 
     const tileset = new Cesium.Cesium3DTileset({
-      url: "/data/3ds2/tileset.json",
+      url: `${config.data}3ds2/tileset.json`,
     });
     tileset.readyPromise
       .then(function (tileset) {
@@ -53,7 +54,7 @@
     viewer.dataSources.add(myEntityCollection);
 
     axios
-      .get("/data/tjp.json") //读取区域json
+      .get(`${config.data}tjp.json`) //读取区域json
       .then((response) => {
         features = response.data.features;
         features.forEach((item) => {

@@ -2,12 +2,13 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
-  <script src="/utils/turf.min.js"></script>
+  <script>document.write('<script src="' + config.utils + 'turf.min.js"><\/script>');</script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
 
@@ -27,7 +28,7 @@
     const colors = ["#006837", "#1a9850", "#66bd63", "#a6d96a", "#d9ef8b", "#ffffbf", "#fee08b", "#fdae61", "#f46d43", "#d73027", "#a50026"]
     const breaks = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 99] // 等值面的级数
 
-    axios.get('/data/windpoint.json')
+    axios.get(`${config.data}windpoint.json`)
       .then((response) => {
         showWindLine(response.data.data)
       })

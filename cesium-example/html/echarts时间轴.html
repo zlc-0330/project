@@ -2,12 +2,13 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
-  <script src="/libs/echarts/5.4.3/echarts.min.js"></script>
+  <script>document.write('<script src="' + config.libs + 'echarts/5.4.3/echarts.min.js"><\/script>');</script>
 </head>
 
 <body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
@@ -28,14 +29,14 @@
     viewer.imageryLayers.addImageryProvider(xyz)
     let arrTileLayer = [];
     const urlArr = [
-      "/assets/timeMap/20200522145400_20200522145400_0c972b7abe4f4b4fbdbe909f5c1ca17a.png",
-      "/assets/timeMap/20200522145400_20200522150000_55c4adac7ac8460db3d893866897bd6d.png",
-      "/assets/timeMap/20200522145400_20200522162400_8b949a9d47fd4f289bd51afe9e009ab9.png",
-      "/assets/timeMap/20200522145400_20200522163000_9f234335ae2c42ac91d5dfc62b72f3db.png",
-      "/assets/timeMap/20200522145400_20200522163600_a808919c4a5a4142b188520a74dacf75.png",
-      "/assets/timeMap/20200522145400_20200522170600_964ada943fcf4a13aa59364b1efd0b1b.png",
-      "/assets/timeMap/20200522145400_20200522152400_4ad54289d6f64f5aaa160f453a99b14a.png",
-      "/assets/timeMap/20200522145400_20200522170600_964ada943fcf4a13aa59364b1efd0b1b.png",
+      `${config.assets}timeMap/20200522145400_20200522145400_0c972b7abe4f4b4fbdbe909f5c1ca17a.png`,
+      `${config.assets}timeMap/20200522145400_20200522150000_55c4adac7ac8460db3d893866897bd6d.png`,
+      `${config.assets}timeMap/20200522145400_20200522162400_8b949a9d47fd4f289bd51afe9e009ab9.png`,
+      `${config.assets}timeMap/20200522145400_20200522163000_9f234335ae2c42ac91d5dfc62b72f3db.png`,
+      `${config.assets}timeMap/20200522145400_20200522163600_a808919c4a5a4142b188520a74dacf75.png`,
+      `${config.assets}timeMap/20200522145400_20200522170600_964ada943fcf4a13aa59364b1efd0b1b.png`,
+      `${config.assets}timeMap/20200522145400_20200522152400_4ad54289d6f64f5aaa160f453a99b14a.png`,
+      `${config.assets}timeMap/20200522145400_20200522170600_964ada943fcf4a13aa59364b1efd0b1b.png`,
     ];
     for (let i = 0, len = urlArr.length; i < len; i++) {
       var imageryProvider = new Cesium.SingleTileImageryProvider({

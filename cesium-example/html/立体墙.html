@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
@@ -107,7 +108,7 @@
         positions: Cesium.Cartesian3.fromDegreesArray([117.154815, 31.853495, 117.151215, 31.844734, 117.154457, 31.848152, 117.154815, 31.853495]),
         maximumHeights: [60, 60, 60, 60],
         minimumHeights: [10, 10, 10, 10],
-        material: new PolylineTrailLinkMaterialProperty(Cesium.Color.ORANGE, 3000, "/assets/icon/buildings-colors.png")
+        material: new PolylineTrailLinkMaterialProperty(Cesium.Color.ORANGE, 3000, `${config.assets}icon/buildings-colors.png`)
       }
     })
 

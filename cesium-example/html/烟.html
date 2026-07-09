@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
@@ -64,7 +65,7 @@
         // this.viewer.trackedEntity = this.entity;
         var particleSystem = this.scene.primitives.add(
           new Cesium.ParticleSystem({
-            image: '/assets/icon/smoke.png',//生成所需粒子的图片路径
+            image: `${config.assets}icon/smoke.png`,//生成所需粒子的图片路径
             //粒子在生命周期开始时的颜色
             startColor: Cesium.Color.BLACK.withAlpha(0.7),
             //粒子在生命周期结束时的颜色

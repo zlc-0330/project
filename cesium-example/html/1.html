@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <title>2024格美</title>
   <!-- 1. 引入 Cesium 样式（CDN） -->
@@ -9,7 +10,7 @@
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-  <script src="/utils/libgif.js"></script>
+  <script>document.write('<script src="' + config.utils + 'libgif.js"><\/script>');</script>
 </head>
 
 <body style="margin: 0; overflow: hidden; background: #fff; width: 100%; height: 100%; position: absolute; top: 0">
@@ -62,7 +63,7 @@
     // 历史点和线
     function initPoints() {
 
-      axios.get('/data/202403.json')
+      axios.get(`${config.data}202403.json`)
         .then((response) => {
           let points = response.data.points;
           let lineArr = [];
@@ -251,7 +252,7 @@
       let div = document.createElement("div");
       let img = document.createElement("img");
       div.appendChild(img);
-      img.src = '/assets/icon/tf.gif'
+      img.src = config.assets + 'icon/tf.gif'
 
       img.onload = () => {
         let rub = new SuperGif({

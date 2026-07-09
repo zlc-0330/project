@@ -3,6 +3,7 @@
 <html lang="en">
 
 <head>
+    <script src="../config.js"></script>
     <meta charset="utf-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,12 +14,12 @@
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
     <script type="text/javascript" src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
 
-    <script src="/utils/cesium.map.min.js"></script>
-    <script src="/utils/CircleScanSystem_fixed.js"></script>
-    <script src="/utils/CircleWaveMaterialProperty.js"></script>
-    <script src="/utils/DynamicWallMaterialProperty.js"></script>
-    <script src="/utils/popup.js"></script>
-    <script src="/utils/latlng.js"></script>
+    <script>document.write('<script src="' + config.utils + 'cesium.map.min.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'CircleScanSystem_fixed.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'CircleWaveMaterialProperty.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'DynamicWallMaterialProperty.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'popup.js"><\/script>');</script>
+    <script>document.write('<script src="' + config.utils + 'latlng.js"><\/script>');</script>
 
     <style>
         .cesium-widget-credits {
@@ -814,7 +815,7 @@
 
         // 加载单张图片
         var imageryProvider = new Cesium.SingleTileImageryProvider({
-            url: "/assets/image/world_b.jpg",
+            url: `${config.assets}image/world_b.jpg`,
             id: "1",
         });
         viewer.imageryLayers.addImageryProvider(imageryProvider);
@@ -828,7 +829,7 @@
         );
         let tileset;
 
-        let czmldata = new Cesium.CzmlDataSource.load("/data/wx.czml");
+        let czmldata = new Cesium.CzmlDataSource.load(`${config.data}wx.czml`);
         viewer.dataSources.add(czmldata);
         viewer.clock.shouldAnimate = true;
 
@@ -972,7 +973,7 @@
                 fabric: {
                     uniforms: {
                         color: Cesium.Color.fromCssColorString("#7ffeff"),
-                        image: "/assets/icon/line1.png",
+                        image: `${config.assets}icon/line1.png`,
                         speed: 10,
                     },
                     source: source,
@@ -1102,7 +1103,7 @@
 
                     // 动态
                     material: new Cesium.DynamicWallMaterialProperty({
-                        trailImage: "/assets/icon/wall.png",
+                        trailImage: `${config.assets}icon/wall.png`,
                         color: Cesium.Color.CYAN,
                         duration: 1500,
                     }),
@@ -1194,7 +1195,7 @@
                 position: position, // 计算实体位置属性
                 orientation: new Cesium.VelocityOrientationProperty(position),
                 model: {
-                    uri: "/data/missile/scene.gltf",
+                    uri: `${config.data}missile/scene.gltf`,
                     scale: 10,
                     minimumPixelSize: 32,
                 },
@@ -1399,7 +1400,7 @@
                 position: position, // 计算实体位置属性
                 orientation: new Cesium.VelocityOrientationProperty(position),
                 model: {
-                    uri: "/data/xiaofangche.gltf",
+                    uri: `${config.data}xiaofangche.gltf`,
                     scale: 10,
                     minimumPixelSize: 32,
                 },
@@ -1481,7 +1482,7 @@
                 position: position, // 计算实体位置属性
                 orientation: new Cesium.VelocityOrientationProperty(position),
                 model: {
-                    uri: "/data/wajueji.glb",
+                    uri: `${config.data}wajueji.glb`,
                     scale: 10,
                     minimumPixelSize: 32,
                 },
@@ -1570,7 +1571,7 @@
                     // this.viewer.trackedEntity = this.entity;
                     var particleSystem = this.scene.primitives.add(
                         new Cesium.ParticleSystem({
-                            image: "/assets/icon/fire.png", //生成所需粒子的图片路径
+                            image: `${config.assets}icon/fire.png`, //生成所需粒子的图片路径
                             //粒子在生命周期开始时的颜色
                             startColor: new Cesium.Color(1, 1, 1, 1),
                             //粒子在生命周期结束时的颜色
@@ -1716,7 +1717,7 @@
                     // this.viewer.trackedEntity = this.entity;
                     var particleSystem = this.scene.primitives.add(
                         new Cesium.ParticleSystem({
-                            image: "/assets/icon/smoke.png", //生成所需粒子的图片路径
+                            image: `${config.assets}icon/smoke.png`, //生成所需粒子的图片路径
                             //粒子在生命周期开始时的颜色
                             startColor: Cesium.Color.BLACK.withAlpha(0.7),
                             //粒子在生命周期结束时的颜色
@@ -1862,7 +1863,7 @@
 
         function loadsss () {
             tileset = new Cesium.Cesium3DTileset({
-                url: "/data/data/tileset.json",
+                url: `${config.data}data/tileset.json`,
             });
             tileset.readyPromise
                 .then(function (tileset) {

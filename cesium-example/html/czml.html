@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
  <!-- 1. 引入 Cesium 样式（CDN） -->
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
@@ -25,13 +26,13 @@
     viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
 
     var imageryProvider = new Cesium.SingleTileImageryProvider({
-      "url": "/assets/image/world_b.jpg",
+      "url": `${config.assets}image/world_b.jpg`,
     })
     viewer.imageryLayers.addImageryProvider(imageryProvider)
 
     // 利用py库 tle2czml，生成czml文件
 
-    let czmldata = new Cesium.CzmlDataSource.load('/data/wx.czml');
+    let czmldata = new Cesium.CzmlDataSource.load(`${config.data}wx.czml`);
     viewer.dataSources.add(czmldata)
     viewer.clock.shouldAnimate = true;
   </script>

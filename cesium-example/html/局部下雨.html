@@ -2,12 +2,13 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
   <!-- 2. 引入 Cesium 核心 JS（CDN） -->
   <script src="https://unpkg.com/cesium@1.98/Build/Cesium/Cesium.js"></script>
-  <script src="/utils/turf.min.js"></script>
+  <script>document.write('<script src="' + config.utils + 'turf.min.js"><\/script>');</script>
 
 </head>
 
@@ -67,7 +68,7 @@
         let billboard = billboardCollection.add({
           scaleByDistance: new Cesium.NearFarScalar(2000000, 0.8, 8000000, 0.3),
           position: Cesium.Cartesian3.fromDegrees(cor[0], cor[1], getRandomHeight()),
-          image: '/assets/icon/yd.jpg',
+          image: `${config.assets}icon/yd.jpg`,
           width: obj.dx,
           height: obj.dx,
         });

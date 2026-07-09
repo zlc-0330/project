@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <script src="../config.js"></script>
   <meta charset="UTF-8" />
   <!-- 1. 引入 Cesium 样式（CDN） -->
   <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
@@ -47,7 +48,7 @@
       position: position,
       orientation: orientation,
       model: {
-        uri: '/data/model/feiji.glb',
+        uri: `${config.data}model/feiji.glb`,
         scale: 10,
         color: Cesium.Color.fromCssColorString("rgba(254, 129, 6, 0.65)"), //混合色
         silhouetteColor: Cesium.Color.fromCssColorString("#001aff"), //边框

@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <script src="../config.js"></script>
     <meta charset="UTF-8" />
     <!-- 1. 引入 Cesium 样式（CDN） -->
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.98/Build/Cesium/Widgets/widgets.css">
@@ -32,7 +33,7 @@
         // 开启帧率
         viewer.scene.debugShowFramesPerSecond = true;
 
-        var promise = Cesium.GeoJsonDataSource.load('/data/geojson_mian.json', {
+        var promise = Cesium.GeoJsonDataSource.load(`${config.data}geojson_mian.json`, {
             clampToGround: true,   //贴地
             fill: Cesium.Color.PINK.withAlpha(0.6),
         });
