@@ -1,0 +1,15 @@
+pages:
+  stage: deploy
+  image: node:20
+  script:
+    # 切换国内源，解决npm安装超时
+    - npm config set registry https://registry.npmmirror.com
+    - npm ci
+    - npm run build
+    # vite打包输出dist，GitLab Pages要求静态资源放入 public
+    - mv dist public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main # 改成你需要部署的分支
