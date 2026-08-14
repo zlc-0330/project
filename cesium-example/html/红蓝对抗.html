@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<title>红蓝对抗演习推演 - Cesium 1.134.1</title>
+<link rel="stylesheet" href="https://unpkg.com/cesium@1.134.1/Build/Cesium/Widgets/widgets.css">
+<script src="https://unpkg.com/cesium@1.134.1/Build/Cesium/Cesium.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body,#app{width:100%;height:100%;overflow:hidden;background:#0a1628}
+.loading-overlay{position:fixed;top:20px;right:20px;background:rgba(5,13,26,.95);backdrop-filter:blur(10px);display:flex;align-items:center;z-index:1000;padding:10px 20px;border-radius:8px;border:1px solid rgba(0,200,200,.3)}
+.loading-spinner{width:24px;height:24px;border:2px solid rgba(0,200,200,.2);border-top-color:#00cccc;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-left:12px;color:#b0e0e0;font-size:13px;font-weight:600}
+#info{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(5,13,26,.9);color:#b0e0e0;padding:8px 22px;border-radius:6px;font:13px/1.6 "Microsoft YaHei",sans-serif;z-index:10;pointer-events:none;border:1px solid rgba(0,200,200,.2)}
+#legend{position:absolute;bottom:80px;left:12px;background:rgba(5,13,26,.85);color:#b0e0e0;padding:10px 16px;border-radius:6px;font:12px/2 "Microsoft YaHei";z-index:10;border:1px solid rgba(0,200,200,.15)}
+#legend span{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">初始化中...</div>
+</div>
+<div id="info">红蓝对抗演习推演 | 08:00:00 – 08:01:30 | Cesium 1.134.1 + 地形</div>
+<div id="legend">
+  <div><span style="background:#f00"></span>红方（指挥所/雷达/战机/导弹）</div>
+  <div><span style="background:#09f"></span>蓝方（雷达/战机/导弹）</div>
+  <div><span style="background:#ff0"></span>雷达扫描扇面</div>
+  <div><span style="background:orange"></span>爆炸火焰</div>
+</div>
+
+<script>
+/* ================================================================
+   0. 全局配置
+   ================================================================ */
+Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMWZiLTQzYjYtYTQ0OS1kMWFjYmFkNjc5YzciLCJpZCI6NDQzODUsImlhdCI6MTYxMDMxNDUyNn0.XcKpgANiY19MC4bdFUXMVEBToBmqS8kuYpUlxJHqx6k';
+
+const T0 = Cesium.JulianDate.fromDate(new Date('2017-08-25T08:00:00Z'));
+const T1 = Cesium.JulianDate.fromDate(new Date('2017-08-25T08:01:30Z'));
+const DEG = Cesium.Math.toRadians;
+const COLOR_BG = Cesium.Color.fromCssColorString('#0a1628');
+
+const loadingOverlay = document.getElementById('loadingOverlay');
+function setLoading(v){ loadingOverlay.style.display = v ? 'flex' : 'none'; }
+
+/* ================================================================
+   1. 工具函数
+   ================================================================ */
+function offsetPos(lng, lat, distM, angleDeg) {
+  const a = DEG(angleDeg);
+  const dLat = (distM * Math.cos(a)) / 110540;
+  const dLng = (distM * Math.sin(a)) / (111320 * Math.cos(DEG(lat)));
+  return [lng + dLng, lat + dLat];
+}
+
+function sectorPositions(lng, lat, radius, startDeg, endDeg, segments) {
+  const pts = [Cesium.Cartesian3.fromDegrees(lng, lat, 2)];
+  for (let i = 0; i <= segments; i++) {
+    const a = startDeg + (endDeg - startDeg) * i / segments;
+    const p = offsetPos(lng, lat, radius, a);
+    pts.push(Cesium.Cartesian3.fromDegrees(p[0], p[1], 2));
+  }
+  return pts;
+}
+
+function militaryArrowPositions(ctrlPts, bodyHalfW, headHalfW, headLen) {
+  const n = ctrlPts.length;
+  if (n < 2) return [];
+  const head = ctrlPts[n-1], prev = ctrlPts[n-2];
+  const dLng = head[0]-prev[0], dLat = head[1]-prev[1];
+  const len = Math.sqrt(dLng*dLng + dLat*dLat) || 1e-9;
+  const ux = dLng/len, uy = dLat/len;
+  const px = -uy, py = ux;
+  const bodyEnd = [head[0]-ux*headLen, head[1]-uy*headLen];
+  const alt = 5;
+  return [
+    Cesium.Cartesian3.fromDegrees(ctrlPts[0][0]+px*bodyHalfW, ctrlPts[0][1]+py*bodyHalfW, alt),
+    Cesium.Cartesian3.fromDegrees(bodyEnd[0]+px*bodyHalfW,    bodyEnd[1]+py*bodyHalfW,    alt),
+    Cesium.Cartesian3.fromDegrees(bodyEnd[0]+px*headHalfW,    bodyEnd[1]+py*headHalfW,    alt),
+    Cesium.Cartesian3.fromDegrees(head[0], head[1], alt),
+    Cesium.Cartesian3.fromDegrees(bodyEnd[0]-px*headHalfW,    bodyEnd[1]-py*headHalfW,    alt),
+    Cesium.Cartesian3.fromDegrees(bodyEnd[0]-px*bodyHalfW,    bodyEnd[1]-py*bodyHalfW,    alt),
+    Cesium.Cartesian3.fromDegrees(ctrlPts[0][0]-px*bodyHalfW, ctrlPts[0][1]-py*bodyHalfW, alt)
+  ];
+}
+
+function lerpPts(a, b, t) {
+  const n = Math.min(a.length, b.length), r = [];
+  for (let i = 0; i < n; i++)
+    r.push([a[i][0]+(b[i][0]-a[i][0])*t, a[i][1]+(b[i][1]-a[i][1])*t, a[i][2]+(b[i][2]-a[i][2])*t]);
+  return r;
+}
+
+function makeSampledPos(list, opts) {
+  const sp = new Cesium.SampledPositionProperty();
+  list.forEach(p => {
+    sp.addSample(
+      Cesium.JulianDate.fromDate(new Date(p.time)),
+      Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.alt)
+    );
+  });
+  sp.setInterpolationOptions({
+    interpolationDegree: Math.min(3, list.length - 1),
+    interpolationAlgorithm: Cesium.LagrangePolynomialApproximation
+  });
+  if (opts) {
+    if (opts.fwd) sp.forwardExtrapolationType = opts.fwd;
+    if (opts.bwd) sp.backwardExtrapolationType = opts.bwd;
+  }
+  return sp;
+}
+
+function timeInterval(s, e) {
+  return new Cesium.TimeIntervalCollection([
+    new Cesium.TimeInterval({
+      start: Cesium.JulianDate.fromDate(new Date(s)),
+      stop:  Cesium.JulianDate.fromDate(new Date(e))
+    })
+  ]);
+}
+
+/* ================================================================
+   2. 主初始化
+   ================================================================ */
+let viewer;
+(async () => {
+  setLoading(true);
+  try {
+    viewer = new Cesium.Viewer('app', {
+      timeline: true, animation: true, homeButton: false, sceneModePicker: false,
+      navigationHelpButton: false, baseLayerPicker: false, geocoder: false,
+      infoBox: true, selectionIndicator: true, fullscreenButton: false,
+      vrButton: false, shouldAnimate: true, shadows: false,
+      requestRenderMode: false,
+      contextOptions: {
+        webgl: { antialias: true, alpha: false, depth: true, stencil: true, powerPreference: 'high-performance' }
+      }
+    });
+
+    const scene = viewer.scene;
+    scene.skyAtmosphere.show = true;
+    scene.sun.show = true;
+    scene.moon.show = false;
+    scene.fog.enabled = true;
+    scene.globe.enableLighting = false;
+    scene.globe.depthTestAgainstTerrain = true;
+    scene.screenSpaceCameraController.enableCollisionDetection = false;
+
+    viewer.resolutionScale = 1.0;
+    viewer.useBrowserRecommendedResolution = true;
+
+    // ---- 地形（安全加载）----
+    try {
+      const tp = await Cesium.CesiumTerrainProvider.fromIonAssetId(1, {
+        requestVertexNormals: true, requestWaterMask: false
+      });
+      viewer.scene.terrainProvider = tp;
+      console.log('✅ 地形加载成功');
+    } catch (e) {
+      console.warn('⚠️ 地形加载失败，使用椭球体', e);
+    }
+
+    // ---- 影像 ----
+    try {
+      viewer.imageryLayers.removeAll();
+      viewer.imageryLayers.addImageryProvider(
+        new Cesium.UrlTemplateImageryProvider({
+          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          maximumLevel: 18, minimumLevel: 0, credit: 'Esri World Imagery'
+        })
+      );
+    } catch (e) { console.warn('影像加载失败', e); }
+
+    // ---- 时钟 ----
+    const clock = viewer.clock;
+    clock.startTime = T0.clone(); clock.stopTime = T1.clone();
+    clock.currentTime = T0.clone();
+    clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+    clock.multiplier = 1;
+
+    const entities = viewer.entities;
+
+    /* ============================================================
+       3. 静态实体 —— 红方
+       ============================================================ */
+    entities.add({
+      name: '红方指挥所',
+      position: Cesium.Cartesian3.fromDegrees(116.33981, 30.860834, 430),
+      billboard: {
+        image: 'https://data.mars3d.cn/img/marker/camp-red.png',
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM, scale: 1.0,
+        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY
+      },
+      label: {
+        text: '红方指挥所', font: 'bold 14px Microsoft YaHei',
+        fillColor: Cesium.Color.RED, outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 3, style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset: new Cesium.Cartesian2(0, -55),
+        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY
+      }
+    });
+
+    const redRadarLng = 115.947263, redRadarLat = 30.835768, redRadarAlt = 260;
+    entities.add({
+      name: '红方雷达', position: Cesium.Cartesian3.fromDegrees(redRadarLng, redRadarLat, redRadarAlt),
+      model: { uri: 'https://data.mars3d.cn/gltf/mars/leida.glb', scale: 1.0, minimumPixelSize: 50,
+        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND }
+    });
+    entities.add({
+      name: '红方雷达探测范围', position: Cesium.Cartesian3.fromDegrees(redRadarLng, redRadarLat, redRadarAlt),
+      ellipsoid: {
+        radii: new Cesium.Cartesian3(55000,55000,35000),
+        material: Cesium.Color.RED.withAlpha(0.08),
+        outline: true, outlineColor: Cesium.Color.RED.withAlpha(0.4),
+        stackPartitions: 24, slicePartitions: 24
+      }
+    });
+    entities.add({
+      name: '红方战场区域', wall: {
+        positions: Cesium.Cartesian3.fromDegreesArray([116.184102,31.544798,115.342088,30.553571,116.816057,30.156257,116.184102,31.544798]),
+        minimumHeights: [0,0,0,0], maximumHeights: [12000,12000,12000,12000],
+        material: Cesium.Color.RED.withAlpha(0.12),
+        outline: true, outlineColor: Cesium.Color.RED.withAlpha(0.5)
+      }
+    });
+
+    /* ============================================================
+       4. 静态实体 —— 蓝方
+       ============================================================ */
+    const blueRadarLng = 118.795298, blueRadarLat = 32.06146, blueRadarAlt = 8;
+    entities.add({
+      name: '蓝方雷达', position: Cesium.Cartesian3.fromDegrees(blueRadarLng, blueRadarLat, blueRadarAlt),
+      model: { uri: 'https://data.mars3d.cn/gltf/mars/leida.glb', scale: 1.0, minimumPixelSize: 50,
+        heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND }
+    });
+    entities.add({
+      name: '蓝方雷达探测范围', position: Cesium.Cartesian3.fromDegrees(blueRadarLng, blueRadarLat, blueRadarAlt),
+      ellipsoid: {
+        radii: new Cesium.Cartesian3(45000,45000,45000),
+        innerRadii: new Cesium.Cartesian3(5000,5000,5000),
+        minimumClock: DEG(60), maximumClock: DEG(300),
+        minimumCone: DEG(20), maximumCone: DEG(90),
+        material: Cesium.Color.CYAN.withAlpha(0.08),
+        outline: true, outlineColor: Cesium.Color.CYAN.withAlpha(0.35),
+        stackPartitions: 24, slicePartitions: 24
+      }
+    });
+    entities.add({
+      name: '蓝方战场区域', wall: {
+        positions: Cesium.Cartesian3.fromDegreesArray([117.459464,32.669056,119.134144,32.663604,118.836901,31.317446,117.459464,32.669056]),
+        minimumHeights: [0,0,0,0], maximumHeights: [12000,12000,12000,12000],
+        material: Cesium.Color.BLUE.withAlpha(0.12),
+        outline: true, outlineColor: Cesium.Color.BLUE.withAlpha(0.5)
+      }
+    });
+
+    /* ============================================================
+       5. 雷达扫描扇面（★ 安全版：确保 CallbackProperty 永不返回 undefined）
+       ============================================================ */
+    const SCAN_SPEED = 60;
+    const TRAIL_COUNT = 6;
+    const TRAIL_ANGLE = 5;
+
+    function addRadarScan(centerLng, centerLat, radius, baseColor) {
+      for (let i = 0; i < TRAIL_COUNT; i++) {
+        const alpha = 0.30 * (1 - i / TRAIL_COUNT);
+        const offset = i * TRAIL_ANGLE;
+        const hierarchy = new Cesium.CallbackProperty((time, result) => {
+          const elapsed = Cesium.JulianDate.secondsDifference(clock.currentTime, T0);
+          const base = ((Math.max(0, elapsed) * SCAN_SPEED) % 360);
+          const startA = base - offset;
+          const positions = sectorPositions(centerLng, centerLat, radius, startA, startA + TRAIL_ANGLE, 6);
+          if (!result) {
+            return new Cesium.PolygonHierarchy(positions);
+          }
+          result.positions = positions;
+          return result;
+        }, false);
+
+        entities.add({
+          polygon: {
+            hierarchy: hierarchy,
+            material: baseColor.withAlpha(alpha),
+            height: 3,
+            classificationType: Cesium.ClassificationType.TERRAIN
+          }
+        });
+      }
+
+      // 扫描亮线
+      const linePos = new Cesium.CallbackProperty((time, result) => {
+        const elapsed = Cesium.JulianDate.secondsDifference(clock.currentTime, T0);
+        const angle = ((Math.max(0, elapsed) * SCAN_SPEED) % 360);
+        const p = offsetPos(centerLng, centerLat, radius, angle);
+        const arr = [
+          Cesium.Cartesian3.fromDegrees(centerLng, centerLat, 5),
+          Cesium.Cartesian3.fromDegrees(p[0], p[1], 5)
+        ];
+        return arr;
+      }, false);
+
+      entities.add({
+        polyline: {
+          positions: linePos, width: 3,
+          material: baseColor.withAlpha(0.9),
+          arcType: Cesium.ArcType.NONE
+        }
+      });
+    }
+
+    addRadarScan(redRadarLng, redRadarLat, 52000, Cesium.Color.YELLOW);
+    addRadarScan(blueRadarLng, blueRadarLat, 42000, Cesium.Color.CYAN);
+
+    /* ============================================================
+       6. 进攻箭头
+       ============================================================ */
+    [
+      { name:'红方进攻箭头1', color:Cesium.Color.RED.withAlpha(0.6), outlineColor:Cesium.Color.RED,
+        t0:'2017-08-25T08:00:04Z', t1:'2017-08-25T08:00:45Z',
+        pts0:[[116.463145,30.818331,557],[116.213265,30.879942,640],[116.322121,31.159826,397],[116.664029,31.463736,59]],
+        pts1:[[116.463145,30.818331,557],[116.213265,30.879942,640],[116.845152,31.670017,35],[117.408668,31.865484,89]]},
+      { name:'蓝方进攻箭头1', color:Cesium.Color.fromCssColorString('#0099FF').withAlpha(0.6), outlineColor:Cesium.Color.fromCssColorString('#0099FF'),
+        t0:'2017-08-25T08:00:03Z', t1:'2017-08-25T08:00:45Z',
+        pts0:[[118.782104,32.133595,10],[118.773311,31.980909,0],[118.438338,32.084293,22],[118.055669,32.019832,59]],
+        pts1:[[118.782104,32.133595,10],[118.773311,31.980909,0],[117.913453,31.870789,30],[117.286644,31.833660,137]]}
+    ].forEach(item => {
+      const start = Cesium.JulianDate.fromDate(new Date(item.t0));
+      const end   = Cesium.JulianDate.fromDate(new Date(item.t1));
+      const hierarchy = new Cesium.CallbackProperty((time, result) => {
+        let t = Cesium.JulianDate.secondsDifference(clock.currentTime, start) /
+                Cesium.JulianDate.secondsDifference(end, start);
+        t = Cesium.Math.clamp(t, 0, 1);
+        const pts = lerpPts(item.pts0, item.pts1, t);
+        const positions = militaryArrowPositions(pts, 0.035, 0.09, 0.12);
+        if (!result) return new Cesium.PolygonHierarchy(positions);
+        result.positions = positions;
+        return result;
+      }, false);
+
+      entities.add({
+        name: item.name,
+        availability: timeInterval(item.t0, '2017-08-25T08:01:30Z'),
+        polygon: {
+          hierarchy: hierarchy,
+          material: item.color,
+          outline: true, outlineColor: item.outlineColor.withAlpha(0.8),
+          height: 5,
+          classificationType: Cesium.ClassificationType.TERRAIN
+        }
+      });
+    });
+
+    /* ============================================================
+       7. 战机（★ 修复：model 和 cylinder 分离到不同 Entity）
+       ============================================================ */
+    const arrPlane = [
+      {name:'蓝方战机1',color:'#0099FF',list:[
+        {time:'2017-08-25T08:00:05Z',lng:118.666947,lat:32.019659,alt:1800},
+        {time:'2017-08-25T08:00:20Z',lng:118.073734,lat:32.196725,alt:1800},
+        {time:'2017-08-25T08:00:30Z',lng:117.663747,lat:32.139578,alt:1800},
+        {time:'2017-08-25T08:00:45Z',lng:117.416821,lat:31.983683,alt:1800}]},
+      {name:'蓝方战机2',color:'#0099FF',list:[
+        {time:'2017-08-25T08:00:05Z',lng:118.670229,lat:31.951527,alt:1800},
+        {time:'2017-08-25T08:00:15Z',lng:118.006201,lat:32.001893,alt:1800},
+        {time:'2017-08-25T08:00:20Z',lng:117.701754,lat:31.987723,alt:1800},
+        {time:'2017-08-25T08:00:33Z',lng:117.461582,lat:31.888292,alt:1800}]},
+      {name:'蓝方战机3',color:'#0099FF',list:[
+        {time:'2017-08-25T08:00:05Z',lng:118.673806,lat:31.913296,alt:1800},
+        {time:'2017-08-25T08:00:25Z',lng:118.054865,lat:31.839124,alt:1800},
+        {time:'2017-08-25T08:00:35Z',lng:117.675255,lat:31.753229,alt:1800},
+        {time:'2017-08-25T08:00:50Z',lng:117.485964,lat:31.726996,alt:1800},
+        {time:'2017-08-25T08:00:55Z',lng:117.379996,lat:31.770719,alt:1800}]},
+      {name:'红方战机1',color:'#FF0000',fwd:'HOLD',list:[
+        {time:'2017-08-25T08:00:10Z',lng:116.33981,lat:30.860834,alt:1800},
+        {time:'2017-08-25T08:00:41Z',lng:117.144977,lat:31.984587,alt:1800},
+        {time:'2017-08-25T08:00:56Z',lng:117.269559,lat:31.995661,alt:1800}]},
+      {name:'红方战机2',color:'#FF0000',fwd:'HOLD',list:[
+        {time:'2017-08-25T08:00:10Z',lng:116.33981,lat:30.860834,alt:1800},
+        {time:'2017-08-25T08:00:30Z',lng:117.135403,lat:31.852591,alt:1800},
+        {time:'2017-08-25T08:00:55Z',lng:117.271061,lat:31.837848,alt:1800}]},
+      {name:'红方战机3',color:'#FF0000',list:[
+        {time:'2017-08-25T08:00:10Z',lng:116.33981,lat:30.860834,alt:1800},
+        {time:'2017-08-25T08:00:20Z',lng:117.043351,lat:31.617132,alt:1800},
+        {time:'2017-08-25T08:00:32Z',lng:117.200792,lat:31.665817,alt:1800},
+        {time:'2017-08-25T08:00:52Z',lng:117.292905,lat:31.742538,alt:1800}]}
+    ];
+
+    arrPlane.forEach(item => {
+      const pos = makeSampledPos(item.list, {
+        fwd: item.fwd === 'HOLD' ? Cesium.ExtrapolationType.HOLD : Cesium.ExtrapolationType.NONE,
+        bwd: Cesium.ExtrapolationType.NONE
+      });
+      const c = Cesium.Color.fromCssColorString(item.color);
+      const startT = Cesium.JulianDate.fromDate(new Date(item.list[0].time));
+      const orientation = new Cesium.VelocityOrientationProperty(pos);
+      const avail = new Cesium.TimeIntervalCollection([
+        new Cesium.TimeInterval({ start: startT, stop: T1 })
+      ]);
+
+      // ★ Entity A: 仅包含 model（无其他几何体）
+      const modelEntity = entities.add({
+        name: item.name,
+        availability: avail,
+        position: pos,
+        orientation: orientation,
+        model: {
+          uri: 'https://data.mars3d.cn/gltf/mars/zhanji.glb',
+          scale: 1.0,
+          minimumPixelSize: 60,
+          maximumScale: 200,
+          runAnimations: false
+        }
+      });
+
+      // ★ Entity B: 仅包含 cylinder 降级（默认 show=false）
+      const fallbackEntity = entities.add({
+        name: item.name + '_fallback',
+        availability: avail,
+        position: pos,
+        orientation: orientation,
+        show: false, // 默认隐藏
+        cylinder: {
+          length: 40, topRadius: 0, bottomRadius: 8,
+          material: c.withAlpha(0.9),
+          outline: true, outlineColor: Cesium.Color.WHITE.withAlpha(0.5)
+        }
+      });
+
+      // ★ Entity C: 轨迹线（独立 Entity，避免冲突）
+      entities.add({
+        name: item.name + '_path',
+        availability: avail,
+        position: pos,
+        path: {
+          leadTime: 0, trailTime: 120, width: 3, resolution: 1,
+          material: new Cesium.PolylineGlowMaterialProperty({
+            color: c, glowPower: 0.2, taperPower: 1
+          }),
+          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 500000)
+        }
+      });
+
+      // ★ Entity D: 标签
+      entities.add({
+        name: item.name + '_label',
+        availability: avail,
+        position: pos,
+        label: {
+          text: item.name, font: '11px Microsoft YaHei',
+          fillColor: c, outlineColor: Cesium.Color.BLACK, outlineWidth: 2,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset: new Cesium.Cartesian2(0, -30),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY
+        }
+      });
+
+      // ★ 模型加载失败时，隐藏 model Entity，显示 fallback Entity
+      if (modelEntity.model && modelEntity.model.readyEvent) {
+        modelEntity.model.readyEvent.addEventListener(() => {
+          console.log('✅ ' + item.name + ' 模型加载成功');
+        });
+      }
+      // 使用 errorEvent 检测加载失败
+      if (modelEntity.model && modelEntity.model.errorEvent) {
+        modelEntity.model.errorEvent.addEventListener((err) => {
+          console.warn('⚠️ ' + item.name + ' 模型加载失败，启用几何降级', err);
+          modelEntity.show = false;
+          fallbackEntity.show = true;
+        });
+      }
+    });
+
+    /* ============================================================
+       8. 导弹（纯锥体 + VelocityOrientation，无 model 冲突）
+       ============================================================ */
+    [
+      {name:'红方导弹1',color:'#FF4444',list:[
+        {time:'2017-08-25T08:00:32Z',lng:117.200792,lat:31.665817,alt:1800},
+        {time:'2017-08-25T08:00:34Z',lng:117.238481,lat:31.827555,alt:1800}]},
+      {name:'红方导弹2',color:'#FF4444',list:[
+        {time:'2017-08-25T08:00:30Z',lng:117.135403,lat:31.852591,alt:1800},
+        {time:'2017-08-25T08:00:33Z',lng:117.461582,lat:31.888292,alt:1800}]},
+      {name:'红方导弹3',color:'#FF4444',list:[
+        {time:'2017-08-25T08:00:41Z',lng:117.144977,lat:31.984587,alt:1800},
+        {time:'2017-08-25T08:00:45Z',lng:117.416821,lat:31.983683,alt:1800}]},
+      {name:'红方导弹4',color:'#FF4444',list:[
+        {time:'2017-08-25T08:00:52Z',lng:117.271061,lat:31.837848,alt:1800},
+        {time:'2017-08-25T08:00:55Z',lng:117.379996,lat:31.770719,alt:1800}]},
+      {name:'蓝方导弹1',color:'#44AAFF',list:[
+        {time:'2017-08-25T08:00:48Z',lng:117.531423,lat:31.732342,alt:1800},
+        {time:'2017-08-25T08:00:52Z',lng:117.296763,lat:31.740295,alt:1800}]}
+    ].forEach(item => {
+      const pos = makeSampledPos(item.list, {
+        fwd: Cesium.ExtrapolationType.NONE, bwd: Cesium.ExtrapolationType.NONE
+      });
+      const c = Cesium.Color.fromCssColorString(item.color);
+      const s = item.list[0].time, e = item.list[item.list.length-1].time;
+
+      entities.add({
+        name: item.name,
+        availability: timeInterval(s, e),
+        position: pos,
+        orientation: new Cesium.VelocityOrientationProperty(pos),
+        cylinder: {
+          length: 25, topRadius: 0, bottomRadius: 3,
+          material: c,
+          outline: true, outlineColor: Cesium.Color.WHITE.withAlpha(0.6)
+        }
+      });
+
+      // 尾焰（独立 Entity）
+      entities.add({
+        name: item.name + '_trail',
+        availability: timeInterval(s, e),
+        position: pos,
+        path: {
+          leadTime: 0, trailTime: 3, width: 2,
+          material: new Cesium.PolylineGlowMaterialProperty({
+            color: Cesium.Color.ORANGE, glowPower: 0.4, taperPower: 0.1
+          })
+        }
+      });
+    });
+
+    /* ============================================================
+       9. 爆炸火焰
+       ============================================================ */
+    [
+      {name:'爆炸火焰1',time:'2017-08-25T08:00:34Z',lng:117.238481,lat:31.827555},
+      {name:'爆炸火焰2',time:'2017-08-25T08:00:52Z',lng:117.292905,lat:31.742538},
+      {name:'爆炸火焰3',time:'2017-08-25T08:00:33Z',lng:117.461582,lat:31.888292},
+      {name:'爆炸火焰4',time:'2017-08-25T08:00:45Z',lng:117.416821,lat:31.983683},
+      {name:'爆炸火焰5',time:'2017-08-25T08:00:55Z',lng:117.379996,lat:31.770719}
+    ].forEach(item => {
+      const d = new Date(item.time); d.setSeconds(d.getSeconds() + 2);
+      entities.add({
+        name: item.name,
+        availability: timeInterval(item.time, d.toISOString()),
+        position: Cesium.Cartesian3.fromDegrees(item.lng, item.lat, 1800),
+        billboard: {
+          image: 'https://data.mars3d.cn/img/marker/fire.png',
+          scale: 2.0, verticalOrigin: Cesium.VerticalOrigin.CENTER,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY
+        }
+      });
+      entities.add({
+        name: item.name + '_扩散',
+        availability: timeInterval(item.time, d.toISOString()),
+        position: Cesium.Cartesian3.fromDegrees(item.lng, item.lat, 1800),
+        ellipsoid: {
+          radii: new Cesium.Cartesian3(200,200,200),
+          material: Cesium.Color.ORANGE.withAlpha(0.3),
+          outline: true, outlineColor: Cesium.Color.ORANGE.withAlpha(0.6)
+        }
+      });
+    });
+
+    /* ============================================================
+       10. 相机
+       ============================================================ */
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(117.287486, 29.5, 280000),
+      orientation: { heading: DEG(2), pitch: DEG(-45), roll: 0 },
+      duration: 0
+    });
+
+    console.log('✅ 红蓝对抗推演加载完成');
+
+  } catch (err) {
+    console.error('❌ 初始化失败:', err);
+    document.querySelector('.loading-text').textContent = '❌ ' + err.message;
+    document.querySelector('.loading-spinner').style.display = 'none';
+  } finally {
+    setTimeout(() => setLoading(false), 1200);
+  }
+})();
+</script>
+</body>
+</html>
