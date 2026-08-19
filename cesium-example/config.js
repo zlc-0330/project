@@ -8,8 +8,8 @@
  */
 // 唯一配置源头，只在浏览器运行
 const BASE_URL = "project/cesium-example"
-// const SOURCE_BASE = 'https://cdn.jsdelivr.net/gh/zlc-0330/project-file-server@latest/cesiumExample/'
-const SOURCE_BASE = 'https://zlc-0330.github.io/project-file-server/cesiumExample/'
+const SOURCE_BASE = 'https://cdn.jsdelivr.net/gh/zlc-0330/project-file-server@main/cesiumExample/'
+// const SOURCE_BASE = 'https://zlc-0330.github.io/project-file-server/cesiumExample/'
 
 const config = {
   root: BASE_URL,
@@ -32,8 +32,11 @@ window.config = config
 // DNS预解析逻辑
 if (typeof document !== "undefined") {
   const preconnectTargets = [
-    'https://zlc-0330.github.io',
-    'https://unpkg.com'
+    // 'https://zlc-0330.github.io',
+    'https://cdn.jsdelivr.net',
+    // 'https://unpkg.com'
+    // 'https://cdn.jsdelivr.net/npm'
+    'https://registry.npmmirror.com'
   ];
   preconnectTargets.forEach(target => {
     const dnsLink = document.createElement('link');

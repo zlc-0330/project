@@ -14,7 +14,7 @@ let waterPrimitive;
  * @param {*} options 
  * @returns 
  */
-function CustomMaterialLine(options) {
+function CustomMaterialLine (options) {
     let Color = Cesium.Color,
         defaultValue = Cesium.defaultValue,
         defined = Cesium.defined,
@@ -26,7 +26,7 @@ function CustomMaterialLine(options) {
         defaultColor = Color.WHITE,
         currentTime = window.performance.now(),
         MaterialType = options.MaterialType || 'wallType' + parseInt(Math.random() * 1000);
-    function PolylineCustomMaterialProperty(options) {
+    function PolylineCustomMaterialProperty (options) {
         options = defaultValue(options, defaultValue.EMPTY_OBJECT);
         this._definitionChanged = new Event();
         this._color = undefined;
@@ -416,7 +416,7 @@ const initScene = () => {
                             baseWaterColor: Cesium.Color.fromCssColorString("#62809b"),
                             blendColor: new Cesium.Color(0, 1, 0.699, 1),
                             // specularMap: Material.DefaultImageId,
-                            normalMap: "https://cesium.com/downloads/cesiumjs/releases/1.103/Build/Cesium/Assets/Textures/waterNormals.jpg",
+                            normalMap: "https://cesium.com/downloads/cesiumjs/releases/1.103/files/Build/Cesium/Assets/Textures/waterNormals.jpg",
                             frequency: 1000,
                             animationSpeed: 0.01,
                             amplitude: 2,
@@ -514,7 +514,7 @@ const initEvent = () => {
         }
     })
 
-  
+
     viewer.camera.setView({
         destination: { x: -2850554.9246458095, y: 4656672.153306185, z: 3287574.727124352 },
         orientation: {
@@ -617,7 +617,7 @@ const main = () => {
 
 
 new window.WOW().init();
-function showUI() {
+function showUI () {
     $("body").append(`
     <div id="uiContainer">
         <div id="topUI" class="wow bounceInDown" data-wow-duration="1.2s"></div>
@@ -625,12 +625,12 @@ function showUI() {
         <div id="roghtUI" class="wow bounceInRight" data-wow-duration="1.2s"></div>
     </div>`);
 }
-function closeLoading() {
+function closeLoading () {
     $("#loadingIndicator").hide();
     $("#loadingIndicator2").hide();
 }
 
-function showLoading() {
+function showLoading () {
     $("#loadingIndicator").show();
     $("#loadingIndicator2").show();
 }

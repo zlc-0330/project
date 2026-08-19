@@ -5,9 +5,9 @@
     <script src="../config.js"></script>
     <meta charset="UTF-8" />
      <!-- 1. 引入 Cesium 样式（CDN） -->
-    <link rel="stylesheet" href="https://unpkg.com/cesium@1.72/Build/Cesium/Widgets/widgets.css">
+    <link rel="stylesheet" href="https://registry.npmmirror.com/cesium/1.72/files/Build/Cesium/Widgets/widgets.css">
     <!-- 2. 引入 Cesium 核心 JS（CDN） -->
-    <script src="https://unpkg.com/cesium@1.72/Build/Cesium/Cesium.js"></script>
+    <script src="https://registry.npmmirror.com/cesium/1.72/files/Build/Cesium/Cesium.js"></script>
     <script>document.write('<script src="' + config.utils + 'CesiumVectorTile.js"><\/script>');</script>
     <script>document.write('<script src="' + config.utils + 'jquery-1.8.3.min.js"><\/script>');</script>
   
@@ -58,7 +58,7 @@
         // 开启帧率
         viewer.scene.debugShowFramesPerSecond = true;
 
-        var config = {
+        var mapConfig = {
             url: {
                 shp: `${config.data}shp/china.shp`,
                 dbf: `${config.data}shp/china.dbf`,
@@ -79,23 +79,23 @@
             maximumLevel: 20
         }
         Cesium.when.all([
-            Cesium.Resource.fetchBlob(config.url.shp),
-            Cesium.Resource.fetchBlob(config.url.dbf),
-            Cesium.Resource.fetchBlob(config.url.prj),
+            Cesium.Resource.fetchBlob(mapConfig.url.shp),
+            Cesium.Resource.fetchBlob(mapConfig.url.dbf),
+            Cesium.Resource.fetchBlob(mapConfig.url.prj),
         ], function (files) {
-            files[0].name = config.name.shp
-            files[1].name = config.name.dbf
-            files[2].name = config.name.prj
+            files[0].name = mapConfig.name.shp
+            files[1].name = mapConfig.name.dbf
+            files[2].name = mapConfig.name.prj
             var shpProvider = new Cesium.VectorTileImageryProvider({
                 source: files,
                 credit: "credit",
-                defaultStyle: config.style,
-                minimumLevel: config.minimumLevel,
-                maximumLevel: config.maximumLevel
+                defaultStyle: mapConfig.style,
+                minimumLevel: mapConfig.minimumLevel,
+                maximumLevel: mapConfig.maximumLevel
             });
             shpProvider.readyPromise.then(function () {
                 var layer = viewer.imageryLayers.addImageryProvider(shpProvider);
-                if (config.isFlyTo) {
+                if (mapConfig.isFlyTo) {
                     viewer.flyTo(layer);
                 }
             });
