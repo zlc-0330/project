@@ -1,0 +1,1 @@
+import{n as t}from"./_plugin-vue2_normalizer-CrCvqmSG.js";const n=t({},function(){var r=this._self._c;return r("div",{attrs:{id:"app"}},[r("router-view")],1)},[],!1,null,null).exports;export{n as default};
