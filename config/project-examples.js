@@ -61,6 +61,17 @@ export default [
                 // openUrl: 'https://gltf-viewer.donmccurdy.com/',
                 image: HOST + 'files/images/cesium-example.png',
             },
+            {
+                id: 'dt-imes',
+                name: 'dt-imes',
+                name_en: '智能机里',
+                // tag: TEXTS['smartCity'],
+                author: 'zlc-0330',
+                openUrl: HOST + 'dt-imes/',  // 直接打开打包后的页面
+                githubUrl: 'https://github.com/zlc-0330/dt-imes',
+                // openUrl: 'https://gltf-viewer.donmccurdy.com/',
+                image: HOST + 'files/images/dt-imes.png',
+            },
         ]
     },
 
