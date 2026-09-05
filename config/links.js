@@ -32,10 +32,10 @@ export default {
     },
     links: [
 
-        {
-            name: '🏡' + TEXTS['openThree'],
-            url: 'https://openthree.github.io/three-cesium-links/'
-        },
+        // {
+        //     name: '🏡' + TEXTS['openThree'],
+        //     url: 'https://openthree.github.io/three-cesium-links/'
+        // },
 
         // {
         //     name: '🍁' + TEXTS['编辑器'],
