@@ -1,0 +1,1 @@
+import{S as e,h as t,k as n}from"./index-Cau-dpaL.js";var r={};function i(t,r){return n(),e(`h1`,null,`用户管理`)}var a=t(r,[[`render`,i]]);export{a as default};

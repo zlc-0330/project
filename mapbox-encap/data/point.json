@@ -1,0 +1,668 @@
+ [
+      {
+        "datasetName": "ProvinceCapital_P@China",
+        "features": {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "1",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "广州市",
+                "NAMEABBR": "广州"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  113.25894806000008,
+                  23.131717835000075
+                ]
+              },
+              "id": 1
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "2",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "南宁市",
+                "NAMEABBR": "南宁"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  108.36211040000006,
+                  22.820087500000056
+                ]
+              },
+              "id": 2
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "3",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "贵阳市",
+                "NAMEABBR": "贵阳"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  106.62626053500009,
+                  26.651165975000026
+                ]
+              },
+              "id": 3
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "4",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "昆明市",
+                "NAMEABBR": "昆明"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  102.83152292000005,
+                  24.883116135000023
+                ]
+              },
+              "id": 4
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "5",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "福州市",
+                "NAMEABBR": "福州"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  119.29138551500012,
+                  26.077392615000065
+                ]
+              },
+              "id": 5
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "6",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "台北市",
+                "NAMEABBR": "台北"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  121.56428946000005,
+                  25.037005730000033
+                ]
+              },
+              "id": 6
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "7",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "拉萨市",
+                "NAMEABBR": "拉萨"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  91.17038700000006,
+                  29.65596000000005
+                ]
+              },
+              "id": 7
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "8",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "成都市",
+                "NAMEABBR": "成都"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  104.06452884000004,
+                  30.575152350000053
+                ]
+              },
+              "id": 8
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "9",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "长沙市",
+                "NAMEABBR": "长沙"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  112.93331142500006,
+                  28.23171683000004
+                ]
+              },
+              "id": 9
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "10",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "合肥市",
+                "NAMEABBR": "合肥"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  117.22181799500004,
+                  31.823608535000062
+                ]
+              },
+              "id": 10
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "11",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "南昌市",
+                "NAMEABBR": "南昌"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  115.853074805,
+                  28.68645085000003
+                ]
+              },
+              "id": 11
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "12",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "武汉市",
+                "NAMEABBR": "武汉"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  114.29842500000007,
+                  30.596015065000074
+                ]
+              },
+              "id": 12
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "13",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "杭州市",
+                "NAMEABBR": "杭州"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  120.20594360000007,
+                  30.248572375000037
+                ]
+              },
+              "id": 13
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "14",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "西安市",
+                "NAMEABBR": "西安"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  108.93512445500005,
+                  34.34359455500004
+                ]
+              },
+              "id": 14
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "15",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "郑州市",
+                "NAMEABBR": "郑州"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  113.61930134500005,
+                  34.747770950000074
+                ]
+              },
+              "id": 15
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "16",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "南京市",
+                "NAMEABBR": "南京"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  118.7918287650001,
+                  32.06283946000008
+                ]
+              },
+              "id": 16
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "17",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "西宁市",
+                "NAMEABBR": "西宁"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  101.77587623000005,
+                  36.616606525000066
+                ]
+              },
+              "id": 17
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "18",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "兰州市",
+                "NAMEABBR": "兰州"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  103.83190102000003,
+                  36.061212685000044
+                ]
+              },
+              "id": 18
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "19",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "银川市",
+                "NAMEABBR": "银川"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  106.22650566000004,
+                  38.48693342000007
+                ]
+              },
+              "id": 19
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "20",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "太原市",
+                "NAMEABBR": "太原"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  112.54257524000002,
+                  37.86967233000007
+                ]
+              },
+              "id": 20
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "21",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "济南市",
+                "NAMEABBR": "济南"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  117.11393874500004,
+                  36.651801920000025
+                ]
+              },
+              "id": 21
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "22",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "石家庄市",
+                "NAMEABBR": "石家庄"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  114.50876515000004,
+                  38.041670820000036
+                ]
+              },
+              "id": 22
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "23",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "乌鲁木齐市",
+                "NAMEABBR": "乌鲁木齐"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  87.61406478500004,
+                  43.82424639000004
+                ]
+              },
+              "id": 23
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "24",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "呼和浩特市",
+                "NAMEABBR": "呼和浩特"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  111.74174357500004,
+                  40.841122710000036
+                ]
+              },
+              "id": 24
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "25",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "沈阳市",
+                "NAMEABBR": "沈阳"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  123.4591441450001,
+                  41.67495449000006
+                ]
+              },
+              "id": 25
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "26",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "长春市",
+                "NAMEABBR": "长春"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  125.31719628500002,
+                  43.81449073500005
+                ]
+              },
+              "id": 26
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "27",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "哈尔滨市",
+                "NAMEABBR": "哈尔滨"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  126.52884984500008,
+                  45.80165136000005
+                ]
+              },
+              "id": 27
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "28",
+                "SmUserID": "0",
+                "CLASS": "AB",
+                "NAME": "天津市",
+                "NAMEABBR": "天津"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  117.19476712500011,
+                  39.08402455500004
+                ]
+              },
+              "id": 28
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "29",
+                "SmUserID": "0",
+                "CLASS": "AD",
+                "NAME": "海口市",
+                "NAMEABBR": "海口"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  110.34695759918675,
+                  19.99703447704192
+                ]
+              },
+              "id": 29
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "30",
+                "SmUserID": "0",
+                "CLASS": "AB",
+                "NAME": "澳门特别行政区",
+                "NAMEABBR": "澳门"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  113.53786069000012,
+                  22.190006140000037
+                ]
+              },
+              "id": 30
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "31",
+                "SmUserID": "0",
+                "CLASS": "AB",
+                "NAME": "香港特别行政区",
+                "NAMEABBR": "香港"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  114.15902277500004,
+                  22.27877778000004
+                ]
+              },
+              "id": 31
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "32",
+                "SmUserID": "0",
+                "CLASS": "AB",
+                "NAME": "重庆市",
+                "NAMEABBR": "重庆"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  106.54776436000009,
+                  29.565906960000063
+                ]
+              },
+              "id": 32
+            },
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "33",
+                "SmUserID": "0",
+                "CLASS": "AB",
+                "NAME": "上海市",
+                "NAMEABBR": "上海"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  121.46908237000002,
+                  31.232387970000048
+                ]
+              },
+              "id": 33
+            }
+          ]
+        },
+        "fieldCaptions": [
+          "SmID",
+          "SmUserID",
+          "CLASS",
+          "NAME",
+          "NAMEABBR"
+        ],
+        "fieldTypes": [
+          "INT32",
+          "INT32",
+          "WTEXT",
+          "WTEXT",
+          "WTEXT"
+        ],
+        "fields": [
+          "SmID",
+          "SmUserID",
+          "CLASS",
+          "NAME",
+          "NAMEABBR"
+        ]
+      },
+      {
+        "datasetName": "Capital_P@China",
+        "features": {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {
+                "SmID": "1",
+                "SmUserID": "0",
+                "Name": "北京市",
+                "NameAbbreviation": "北京"
+              },
+              "geometry": {
+                "type": "Point",
+                "coordinates": [
+                  116.40189415985996,
+                  39.905028142031775
+                ]
+              },
+              "id": 1
+            }
+          ]
+        },
+        "fieldCaptions": [
+          "SmID",
+          "SmUserID",
+          "Name",
+          "NameAbbreviation"
+        ],
+        "fieldTypes": [
+          "INT32",
+          "INT32",
+          "WTEXT",
+          "WTEXT"
+        ],
+        "fields": [
+          "SmID",
+          "SmUserID",
+          "Name",
+          "NameAbbreviation"
+        ]
+      }
+    ]
