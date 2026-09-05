@@ -82,7 +82,7 @@ export default [
                 tip: 'mapbox常用方法封装',
                 // tag: TEXTS['smartCity'],
                 author: 'zlc-0330',
-                openUrl: HOST + 'dt-imes/',  // 直接打开打包后的页面
+                openUrl: HOST + 'mapbox-encap/',  // 直接打开打包后的页面
                 githubUrl: 'https://github.com/zlc-0330/mapbox-encap',
                 // openUrl: 'https://gltf-viewer.donmccurdy.com/',
                 image: HOST + 'files/images/mapbox-encap.png',
