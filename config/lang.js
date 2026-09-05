@@ -12,6 +12,8 @@ else LANG_EN = local_langEn === 'true'
 
 window.TEXTS = Object.fromEntries(Object.entries({
 
+    cesiumExample: { zh: '开源三维', en: 'OpenThree' },
+    dt_imes: { zh: '智能机里', en: 'dt_imes' },
     openThree: { zh: '开源三维', en: 'OpenThree' },
 
     '官方': { zh: '官方', en: 'Official' },

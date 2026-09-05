@@ -52,8 +52,9 @@ export default [
 
             {
                 id: 'cesiumExample',
-                name: 'cesium示例',
+                name: 'cesiumExample',
                 name_en: 'cesium示例',
+                tip: 'cesium的一些示例',
                 // tag: TEXTS['smartCity'],
                 author: 'zlc-0330',
                 openUrl: HOST + 'cesium-example/',  // 直接打开打包后的页面
@@ -64,13 +65,27 @@ export default [
             {
                 id: 'dt-imes',
                 name: 'dt-imes',
-                name_en: '智能机里',
-                // tag: TEXTS['smartCity'],
+                name_en: '智能机理',
+                // tag: TEXTS['dt_imes'],
+                tip: '智能机理',
                 author: 'zlc-0330',
                 openUrl: HOST + 'dt-imes/',  // 直接打开打包后的页面
                 githubUrl: 'https://github.com/zlc-0330/dt-imes',
                 // openUrl: 'https://gltf-viewer.donmccurdy.com/',
                 image: HOST + 'files/images/dt-imes.png',
+
+            },
+            {
+                id: 'mapbox-encap',
+                name: 'mapbox-encap',
+                name_en: 'mapbox常用方法封装',
+                tip: 'mapbox常用方法封装',
+                // tag: TEXTS['smartCity'],
+                author: 'zlc-0330',
+                openUrl: HOST + 'dt-imes/',  // 直接打开打包后的页面
+                githubUrl: 'https://github.com/zlc-0330/mapbox-encap',
+                // openUrl: 'https://gltf-viewer.donmccurdy.com/',
+                image: HOST + 'files/images/mapbox-encap.png',
             },
         ]
     },
