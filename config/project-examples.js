@@ -87,6 +87,18 @@ export default [
                 // openUrl: 'https://gltf-viewer.donmccurdy.com/',
                 image: HOST + 'files/images/mapbox-encap.png',
             },
+            {
+                id: 'cesium-radar',
+                name: 'cesium-radar',
+                name_en: 'cesium-雷达',
+                tip: 'cesium的雷达效果,有雷达、干扰机、电磁波、雷达组网等效果（cesium1.96）',
+                // tag: TEXTS['smartCity'],
+                author: 'zlc-0330',
+                openUrl: HOST + 'cesium-radar/',  // 直接打开打包后的页面
+                // githubUrl: 'https://github.com/zlc-0330/mapbox-encap',
+                // openUrl: 'https://gltf-viewer.donmccurdy.com/',
+                image: HOST + 'files/images/cesium-radar.png',
+            },
         ]
     },
 
