@@ -1,0 +1,1068 @@
+in float v_depthFromNearPlusOne;
+in vec2  v_textCoord;
+in vec2  v_AZ_PitchR;
+in vec3  v_Normal;
+
+out vec4 out_FragColor;
+ 
+void writeLogDepth(float depth)
+{
+   if (depth <= 0.9999999 || depth > FarDepthFromNearPlusOne) {
+		discard;
+	}
+	gl_FragDepth = log2(depth) * OneOverLog2FarDepthFromNearPlusOne;
+}
+
+vec3 computeNormal(in vec3 oriVertex)
+{
+	vec3 normal = cross(vec3(dFdx(oriVertex.x), dFdx(oriVertex.y), dFdx(oriVertex.z)), vec3(dFdy(oriVertex.x), dFdy(oriVertex.y), dFdy(oriVertex.z)));
+	normal = normalize(normal);
+	return normal;
+}
+
+void main()
+{
+
+	vec4 FragColor = vec4(1.0,1.0,1.0,1.0);
+
+	float lightFactor = dot(v_Normal, LightDir);
+	
+	if(BRadarFlatLoc_BlendColor.y > 0.5)
+	{
+		vec4 finalColor = texture(radar_ColorTable, vec2(0.5, v_textCoord.x));
+	    vec3 blendColor = vec3(finalColor.xyz * (1.0 - UniformColor.a) + UniformColor.rgb * UniformColor.a);
+		FragColor = vec4(blendColor * (1.0 - lightFactor)  + lightFactor * LightColor.xyz*LightColor.w,UniformColor.a);
+	}
+	else
+	{
+	  FragColor = UniformColor;
+	}
+
+    out_FragColor = FragColor;
+
+	if (EnableLogDepth) {
+      writeLogDepth(v_depthFromNearPlusOne); 
+    }
+}
+in vec4 Position;
+in vec3 Normal;
+
+out vec2  v_textCoord;
+out vec2  v_AZ_PitchR;
+out vec3  v_Normal;
+out float v_depthFromNearPlusOne;
+
+
+
+void vertexLogDepth()
+{
+   v_depthFromNearPlusOne = (gl_Position.w - CurrentFrustum.x) + 1.0; 
+}
+
+float absolute(float a)
+{
+	return a < 0.0 ? -a : a;
+}
+
+vec3 AngleToWorldPoint(float radius, float sinDir, float cosDir, float sinEle, float cosEle, float dEleR)
+{
+    vec3 earthPnt;
+	
+    if(BRadarFlatLoc_BlendColor.x > 0.5)
+	{
+	  if(MissParameter_Radius_Pos.x > 0.5)
+	  {
+	      //дїЇд»°и§’дёє0еє¦зљ„жѓ…е†µдё‹,и®Ўз®—ењ†зЋЇ
+		  if(dEleR == 0.0)
+		  {
+			 earthPnt = vec3(radius * sinDir, radius * cosDir, 0.0); 
+		  }
+		  else{
+		     //е…¶д»–зљ„и§’еє¦дё‹пјЊй»и®¤дёє0.0;
+			 earthPnt = vec3(0.0,0.0, 0.0);
+		  } 
+	  }
+	  else{
+	  
+	    if(dEleR == 15.0*DTOR)
+		{
+		  earthPnt = vec3(radius * sinDir, radius * cosDir, 0.0);   
+		}
+		else{
+		  earthPnt = vec3(0.0,0.0, 0.0);
+		}	
+	  }
+	  
+	}
+	else{
+	  earthPnt = vec3(radius * sinDir * cosEle, radius * cosDir * cosEle, radius * sinEle);
+	}
+	
+	return earthPnt;
+}
+
+
+float distanceEarthSurface(float lat1Rad, float lon1Rad, float lat2Rad, float lon2Rad, float radius)
+{
+	float dLat = (lat2Rad - lat1Rad);
+	float dLon = (lon2Rad - lon1Rad);
+	float a = sin(dLat / 2.0) * sin(dLat / 2.0) + cos(lat1Rad) * cos(lat2Rad) *sin(dLon / 2.0) * sin(dLon / 2.0);
+	float c = 2.0 * atan(sqrt(a),sqrt(1.0 - a));
+	float d = radius * c;
+	return d;
+}
+
+float distanceEarthS(vec2 radarLonLatRad,vec2 disturbLonLatRad)
+{
+	float length = distanceEarthSurface(radarLonLatRad.y, radarLonLatRad.x,disturbLonLatRad.y, disturbLonLatRad.x, 6378137.0);
+	return length;
+}
+
+float rhumbBearing(float lat1Rad, float lon1Rad, float lat2Rad, float lon2Rad)
+{
+	float dLon = lon2Rad - lon1Rad;
+	float dPhi = log(tan(lat2Rad / 2.0 + MAGNETICS_PI / 4.0) / tan(lat1Rad / 2.0 + MAGNETICS_PI / 4.0));
+	if (absolute(dLon) > MAGNETICS_PI) dLon = dLon > 0.0 ? -(2.0 * MAGNETICS_PI - dLon) : (2.0 * MAGNETICS_PI + dLon);
+	float brng = atan(dLon,dPhi);
+	return mod(brng + 2.0 * MAGNETICS_PI, 2.0 * MAGNETICS_PI);
+}
+
+
+float GetDistance(in float dSinEleR, in float dCosEleR, out float dPercent1)
+{
+	float dividend = Pt_Gt_lanBuda_thegema.x * pow(Pt_Gt_lanBuda_thegema.y, 2.0) * pow(Pt_Gt_lanBuda_thegema.z, 2.0) * Pt_Gt_lanBuda_thegema.w * sqrt(N_K_Bn_Fn.x);
+	float divider = pow(4.0 * MAGNETICS_PI, 3.0) * N_K_Bn_Fn.y * SDeltaN_T0_GridStepAngle.y * N_K_Bn_Fn.z * N_K_Bn_Fn.w * SDeltaN_T0_GridStepAngle.x;
+	
+	float RE = sqrt(sqrt(dividend / divider));
+
+	float  RD = sqrt(sqrt(abs(dSinEleR))) * dCosEleR * dCosEleR;
+
+	dPercent1 = RD / 0.7;
+	return RE * RD;
+}
+
+float GetDistance_Disturb(in float dSinEleR, in float dCosEleR, in float dDirR, out float dPercent1)
+{
+	//й›·иѕѕзљ„дё»и¦ЃеЏ‚ж•°
+	float dividend = Pt_Gt_lanBuda_thegema.x * pow(Pt_Gt_lanBuda_thegema.y, 2.0) * pow(Pt_Gt_lanBuda_thegema.z, 2.0) * Pt_Gt_lanBuda_thegema.w * sqrt(N_K_Bn_Fn.x);
+
+	float divider = 0.0;
+	
+	for (int i = 0; i < NumDisturb; i++)
+	{
+		RadarDisturbMsg disMsg = Radar_DisturbMsgs[i];
+		
+		vec2 radarLonLatRad =   vec2(MissParameter_Radius_Pos.z, MissParameter_Radius_Pos.w);
+		vec2 disturbLonLatRad = vec2(disMsg.Pos.x, disMsg.Pos.y);
+        
+		float Rj = distanceEarthS(radarLonLatRad,disturbLonLatRad);
+		float theta = rhumbBearing(radarLonLatRad.y,radarLonLatRad.x, disturbLonLatRad.y, disturbLonLatRad.x);
+		
+		float angle = abs(dDirR - theta);
+		if (angle > MAGNETICS_PI)
+		{
+			angle = MAGNETICS_PI * 2.0 - angle;
+		}
+		theta = RTOD * angle;
+		
+		float Gt = 0.0;
+
+		if (0.0 <= theta && theta <= disMsg.Theta_Half * 0.5)
+		{
+			Gt = Pt_Gt_lanBuda_thegema.y;
+		}
+		else if (disMsg.Theta_Half * 0.5 <= theta && theta <= 90.0)
+		{
+			Gt = Pt_Gt_lanBuda_thegema.y * disMsg.K * pow((disMsg.Theta_Half / theta), 2.0);
+		}
+		else
+		{
+			Gt = Pt_Gt_lanBuda_thegema.y * disMsg.K * pow((disMsg.Theta_Half / 90.0), 2.0);
+		}
+
+		divider += disMsg.Pj * disMsg.Gj * Gt * N_K_Bn_Fn.z * disMsg.Yj / (disMsg.Bj * pow(Rj, 2.0));
+	}
+
+	divider = divider * 4.0 * MAGNETICS_PI;
+	
+	float RE = sqrt(sqrt(dividend / divider));
+	float RD = sqrt(sqrt(abs(dSinEleR))) * dCosEleR * dCosEleR;
+	
+	dPercent1 = RD / 0.7;
+	
+	return RE * RD ;
+}
+
+
+float GetDistance_Disturb_NoRadarMsg(in float radius, in float dSinEleR, in float dCosEleR, in float dDirR,in float dEleR, out float dPercent1)
+{	   
+	 
+	//й›·иѕѕзљ„дё»и¦ЃеЏ‚ж•°
+	float dividend = radius;
+
+	float divider = 0.0;
+	
+	for (int i = 0; i < NumDisturb; i++)
+	{
+		RadarDisturbMsg disMsg = Radar_DisturbMsgs[i];
+		
+		vec2 radarLonLatRad =   vec2(MissParameter_Radius_Pos.z, MissParameter_Radius_Pos.w);
+		vec2 disturbLonLatRad = vec2(disMsg.Pos.x, disMsg.Pos.y);
+        
+		float Rj = distanceEarthS(radarLonLatRad,disturbLonLatRad);
+		float theta = rhumbBearing(radarLonLatRad.y,radarLonLatRad.x, disturbLonLatRad.y, disturbLonLatRad.x);
+		
+		float angle = abs(dDirR - theta);
+		if (angle > MAGNETICS_PI)
+		{
+			angle = MAGNETICS_PI * 2.0 - angle;
+		}
+		theta = RTOD * angle;
+		
+		float Gt = 0.0;
+
+		if (0.0 <= theta && theta <= disMsg.Theta_Half * 0.5)
+		{
+			Gt = 1.0;
+		}
+		else if (disMsg.Theta_Half * 0.5 <= theta && theta <= 90.0)
+		{
+			Gt = disMsg.K * pow((disMsg.Theta_Half / theta), 2.0);
+		}
+		else
+		{
+			Gt = disMsg.K * pow((disMsg.Theta_Half / 90.0), 2.0);
+		}
+
+		divider += disMsg.Pj * disMsg.Gj * Gt *4.0* disMsg.Yj / (disMsg.Bj * pow(Rj, 2.0));
+	}
+
+    
+   
+	 if(NumDisturb != 0 )
+	 {
+	    float RD = sqrt(sqrt(abs(dSinEleR))) * dCosEleR * dCosEleR;
+        //dPercent1 = 1.0 - RD / 0.7;
+		
+		dPercent1 = 1.0 - abs(dEleR+ MAGNETICS_PI *0.5) / MAGNETICS_PI;
+	 
+	    divider = divider * 4.0 * MAGNETICS_PI;
+	    float RE = sqrt(sqrt(dividend / divider));
+		if(RE > dividend)
+		{
+		    RE = dividend;
+		}
+		return RE;
+	 }
+	 else{
+	 
+	     float RD = sqrt(sqrt(abs(dSinEleR))) * dCosEleR * dCosEleR;
+		// dPercent1 = 1.0- RD / 0.7;
+		 
+	     dPercent1 = 1.0 - abs(dEleR + MAGNETICS_PI*0.5) / 3.1415926;
+	     return dividend ;
+	 }
+	
+
+}
+
+float GetDistanceAntena(in float dEle)
+{
+	dEle = 90.0 - dEle;
+	float lobeWidth_h = AntenaLobe.x;
+	float lobeK = AntenaCfg.x;
+	float lobeWidth_halfPt_h = AntenaLobe.z;
+
+	float distance = 0.0;
+	float value = abs(dEle);
+	if (value < 0.5 * lobeWidth_h)
+	{
+		float v = -lobeK * pow(2.0 * dEle / lobeWidth_halfPt_h, 2.0);
+		distance =  exp(v);
+	}	
+	return distance;
+}
+		
+void main()
+{
+    //Position.x = sinDir ;Position.y = cosDir; Position.z =  sinEle; Position.w = cosEle;
+	//Normal.x = dDirR ,Normal.y = dEleR ,Normal.z = 0.0 з”ЁжќҐеЊєе€†meshе’ЊиЎҐдёЃ;
+	
+	vec4 PositionTemp = Position;
+	vec3 NormalTemp = Normal;
+	
+	float pitchAntenna = AntenaCfg.w;
+	float dirAntenna = AntenaCfg.z;
+	float sinEle = sin(pitchAntenna);
+	float cosEle = cos(pitchAntenna);
+
+	float disRadar =  0.0;
+	float dPercent1 = 0.0;
+	if(NumDisturb > 0)
+	{
+	    float disMax = GetDistance(sinEle, cosEle,dPercent1);
+		disRadar = GetDistance_Disturb(sinEle, cosEle,NormalTemp.x, dPercent1);
+		if(disRadar > disMax)
+		{
+			disRadar = disMax;
+		}   
+	}
+	else
+	{
+	    disRadar = GetDistance(sinEle, cosEle,dPercent1);
+	}  
+	
+	float disAntena = GetDistanceAntena(NormalTemp.z) * disRadar;
+	
+    vec3 modelPoint = AngleToWorldPoint(disAntena,PositionTemp.x,PositionTemp.y,PositionTemp.z,PositionTemp.w,NormalTemp.y);
+	if(modelPoint == vec3(0.0,0.0,0.0))
+	{
+	   v_Normal = vec3(1.0,0.,0.0);
+	}
+	else{
+	    v_Normal = normalize(modelPoint);
+	}
+	
+    gl_Position =  ProjectionMatrix *ViewMatrix * ModelMatrix* vec4(modelPoint.z,modelPoint.x,modelPoint.y, 1.0);
+	
+	if (EnableLogDepth) {
+		vertexLogDepth();
+	}
+	
+	v_textCoord = vec2(dPercent1,0.9);
+	v_AZ_PitchR = vec2(Normal.x,Normal.y);
+	
+
+}
+             Ђ  (                                                                                                                                                                                                                          
+                          %   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   W   P   )                       X   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Н   Ѕ   `                       h   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   т   б   s                       C   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ќ   ‘   J                          +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   +   (                                                                                                                                                                                                                                                                                                                                                                                                                                 $   A   Z   o   }   }   }   }   }   |   v   d   F   '      	                                                        >   v   ¤   ї   П   Э   ж   ж   ж   ж   ж   е   в   Ц   Г   «   ѓ   N   "                                            '   q   №   б   ш   щ   у   п   н   н   н   н   н   н   н   п   ф   ц   и   Е   ђ   E                                    (   ѓ   Ы   щ   у   д   Е   ў   ‹   z   z   z   z   z   z   |   ‰   Ј   Г   в   т   з   ®   Q                                 m   Ы   ш   Э   Ґ   j   D   .                               .   D   j   ¦   а   к   ®   C                          2   ®   ш   У   z   0                                                            5   ‚   Ц   е   ‹                          R   Щ   п   •                                                                          -   љ   о   ј   E                       f   т   У   _                                                                             e   Ч   Ъ   f                       m   щ   ї   D                                                                           	   M   Д   й   u                       g   с   Е   M                                                                             U   Л   к   v                       Q   Ш   в   y                                                                           |   ж   Щ   e                       3   Ї   х   В   Y                                                                   M   №   у   ¶   A                          s   д   т   В   q   1                                      
+      ,   e   І   м   д   ѓ                             /   љ   л   ф   Ь   ±   …   _   G   9   .            #   3   @   V   |   Ё   Ф   с   м   Ё   =                                 5   Њ   Х   с   ц   к   У   Е   Ѕ   ¶   ­   ©   Є   °   є   Б   О   г   ф   х   а   ў   D                                         $   \   —   О   л   р   х   ш   ъ   э   я   я   э   ъ   ч   ф   н   Ы   °   s   4   
+                                                 '   M   p   Ќ   «   ї   Й   Э   ж   е   Ы   З   ·   Ј   Ѓ   Z   6                                                                           2   >   C   O   U   T   N   C   9   -                                                                                                                                                                                                                                                                                                                       !   A   g   …   њ   «   «   «   «   «   «   ¤   Џ   m   I   '                                                       &   a   ћ   Г   Щ   й   ц   я   я   я   я   я   я   ы   п   Ь   Ж   §   u   <                                         
+   ;   “   Ф   у   ъ   т   н   й   ж   ж   ж   ж   ж   ж   ж   и   н   с   с   Ю   °   c                                    8   ћ   к   щ   л   М   њ   {   c   R   R   R   R   R   R   T   a   {   љ   Е   й   п   Й   k                                ѓ   к   ф   Ж   }   I   )      
+                              	      )   I   ‚   К   п   Д   Y   
+                       <   Ѕ   щ   В   \                                                                    e   Ж   м   љ   (                       Y   в   и   Ѓ                                                                            †   й   Д   N                       i   х   К   R                                                                              Y   Р   в   n                       l   ш   ј   B                                                                           	   L   В   м   x                       a   л   Л   U                                                                             \   Т   й   u                       I   О   л   Ќ                                                                        #   Њ   о   С   ]                       )       ч   Ц   u   "   
+                                                     	       i   П   т   Ё   3                          ^   П   ц   Ъ   —   S   &            
+                        !   H   ‹   Р   у   Ц   m                             !   z   Ц   ц   н   Н   ¬   ‹   o   ^   R   B   =   >   F   W   f      ¦   И   и   ч   а   ’   +                                  !   g   ё   ж   ф   ц   м   Э   Ф   О   Ж   Г   Д   И   С   Щ   е   ц   ш   м   Л   Ђ   .                                            >   q   ©   Ц   й   о   с   у   ц   ш   ч   ц   т   р   м   Я   ј   ‡   P                                                           /   L   f   Ѓ   ”   ћ   °   є   №   Ї   њ   Ќ   {   Z   9      	                                                                            $   )   2   7   7   1   (   !      	                                                                                                                                                                                                                                                                                                                                                                                                                           ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   ?   :                          U   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   Е   ¶   ]                       j   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   ш   е   u                       P   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   є   ¬   X                          5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   5   1                                                                                                                                                                                                                                                                                                                            
+                                                                                                           )   A   U   c   c   c   c   c   c   ]   J   -                                                                 ,   ]   ’   №   Й   Т   Ш   Ш   Ш   Ш   Ш   Ш   Х   Н   Ѕ   ќ   j   8                                                   ^   Є   Ц   о   ы   щ   ф   р   р   р   р   р   р   с   у   ч   с   Ы   »      3                                         u   С   ф   ч   м   Ы   Б   ¤   Џ   Џ   Џ   Џ   Џ   Џ   ‘   Ў   А   Ь   н   т   Я   ќ   ?                                 c   Ф   щ   й   №   }   Q   7   *   !   !   !   !   !   !   "   )   8   P   |   №   к   е   ћ   7                          ,   ¤   ш   Я   Ћ   =                                                          D   •   в   б   Ѓ                          L   Т   ф   ў   ,                                                                 	   8   ¦   т   µ   ?                       f   т   Ч   e                                                                           j   Ы   Х   `                       n   ъ   ї   E                                                                           	   N   Д   и   t                       j   ч   Б   G                                                                           	   P   З   к   w                       V   Э   Э   o                                                                            r   в   Э   i                       6   µ   ф   µ   G                                                                   A   ­   у   ї   J                          Ђ   н   о   ±   [   "                                                    N   Ј   л   к   Ќ                             8   Ґ   т   с   Ф   Ј   k   E   +                        $   <   b   –   Л   н   р   І   G                                ?       е   х   т   Э   Н   В   є   «   •   Џ   ‘   њ   І   ї   Й   Щ   н   ч   к   ±   Q                                     
+   /   n   І   в   о   х   ы   ю   ш   п   н   н   т   ы   ю   щ   т   з   И   ‰   @                                                    0   X   „   §   М   г   е   и   й   й   и   д   Ы   Д   ™   j   A                                                                
+      *   9   C   M   _   h   g   ^   L   ?   5   $                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                -   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   g   `   1                       _   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   Э   М   h                       g   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   п   Ю   q                       ;   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Љ   Ђ   A                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            	                                                                              
+                       @   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ”   ‰   F                       f   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   о   Ь   p                       d   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   и   Ч   n                       *   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   b   [   /                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 U   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   З   ё   ^                       n   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   я   м   x                       `   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   б   Р   j                          7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   7   3                                                                                                                                                                                                                                                                                                                                                                                                                                            %   9   G   G   G   G   G   F   A   -         	                                                               C   v   ¦   Ж   С   Ц   Ц   Ц   Ц   Ц   Ц   Ф   Л   ®   Ђ   O   $                                                   E      Р   е   ф   э   ы   ц   ц   ц   ц   ц   ц   ч   щ   х   и   Ц   Ї   g   #                                        e   Е   о   щ   т   и   а   И   °   °   °   °   °   °   І   Д   Э   и   р   с   Щ   Џ   /                              
+   U   Й   ш   с   Р   љ   a   ?   -   &   &   &   &   &   &   &   ,   @   b   •   П   с   г   ‘   +                          (   ќ   ц   й       G                                                          O   Ґ   л   Ы   u                          I   Н   х   ©   5                                                                    @   ¬   с   ®   9                       b   о   Ю   o                                                                            s   в   С   \                       l   ш   ї   F                                                                           	   O   Е   и   s                       k   ч   Ѕ   B                                                                           	   L   В   л   w                       Z   г   Ъ   h                                                                             l   а   в   n                       >   А   ф   §   4                                                                     4   ў   ф   Е   O                          ‹   ф   к   Ў   A                                                         :   ‘   ж   н   •   #                          A   ±   х   п   Й   Ќ   N   *                              %   E   }   ї   л   у   Б   T                                M   і   о   ц   н   Ы   К   °   њ   Њ   u   p   r   }   “   ¦   ї   Щ   и   ц   с   Д   h                                        :   …   К   л   ф   ъ   ч   с   н   ж   е   е   и   о   ф   щ   щ   о   Ъ   Ј   N                                                   ;   o   ¤   Н   г   з   й   м   о   о   м   и   е   Ю   Ѕ   „   O   &                                                                   ,   D   Z   d   v   Ђ      u   b   R   >   &      
+                                                                                                      	                                                                                                                                                                           0	18.2282	18.2282	0	18.2	0	18.2	1000
+12	18.2282	17.8299	3.78986	17.8023	3.78399	18.2	1000
+24	18.2282	16.6523	7.41408	16.6265	7.40261	18.2	1000
+36	18.2282	14.7469	10.7143	14.7241	10.6977	18.2	1000
+48	18.2282	12.197	13.5462	12.1782	13.5252	18.2	1000
+60	18.2282	9.1141	15.7861	9.1	15.7617	18.2	1000
+72	18.2282	5.63282	17.336	5.62411	17.3092	18.2	1000
+84	18.2282	1.90537	18.1283	1.90242	18.1003	18.2	1000
+96	18.2282	-1.90537	18.1283	-1.90242	18.1003	18.2	1000
+108	18.2282	-5.63282	17.336	-5.62411	17.3092	18.2	1000
+120	18.2282	-9.1141	15.7861	-9.1	15.7617	18.2	1000
+132	18.2282	-12.197	13.5462	-12.1782	13.5252	18.2	1000
+144	18.2282	-14.7469	10.7143	-14.7241	10.6977	18.2	1000
+156	18.2282	-16.6523	7.41408	-16.6265	7.40261	18.2	1000
+168	18.2282	-17.8299	3.78986	-17.8023	3.78399	18.2	1000
+180	140.11	-140.11	7.938e-14	-140.1	7.93742e-14	140.1	1000
+192	140.21	-137.146	-29.1514	-137.136	-29.1492	140.2	1000
+204	140.21	-128.088	-57.0286	-128.079	-57.0245	140.2	1000
+216	140.21	-113.432	-82.4135	-113.424	-82.4075	140.2	1000
+228	140.31	-93.8859	-104.271	-93.879	-104.263	140.3	1000
+240	140.31	-70.1551	-121.512	-70.15	-121.503	140.3	1000
+252	140.41	-43.3892	-133.538	-43.386	-133.528	140.4	1000
+264	140.41	-14.6769	-139.641	-14.6758	-139.631	140.4	1000
+276	140.41	14.6769	-139.641	14.6758	-139.631	140.4	1000
+288	28.1192	8.68932	-26.743	8.68338	-26.7247	28.1	1000
+300	18.2282	9.1141	-15.7861	9.1	-15.7617	18.2	1000
+312	18.2282	12.197	-13.5462	12.1782	-13.5252	18.2	1000
+324	18.2282	14.7469	-10.7143	14.7241	-10.6977	18.2	1000
+336	18.2282	16.6523	-7.41408	16.6265	-7.40261	18.2	1000
+348	18.2282	17.8299	-3.78986	17.8023	-3.78399	18.2	1000
+360	18.2282	18.2282	2.79152e-14	18.2	2.7872e-14	18.2	1000
+precision highp float;
+precision highp int;
+precision highp sampler2D;
+
+#ifdef USE_UBO
+#define UNIFORM_DECL_PREFIX
+#else
+#define UNIFORM_DECL_PREFIX uniform
+#endif
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+#define SAMPLER_DECL_PREFIX
+#else
+#define SAMPLER_DECL_PREFIX uniform
+#endif
+
+#define MAGNETICS_PI  3.14159265
+#define MAGNETICS_2PI 6.28318548
+
+#define DTOR  0.017453292
+#define RTOD  57.295780490
+
+struct RadarDisturbMsg {
+    float Pj;//е№Іж‰°жњєеЏ‘е°„еЉџзЋ‡
+	float Gj;//е№Іж‰°жњєзљ„еЏ‘е°„еўћз›Љ
+	float Bj;//е№Іж‰°жњєиї›е…Ґй›·иѕѕе¤©зєїзљ„дїЎеЏ·её¦е®Ѕ
+	float Yj;//дёєй›·иѕѕе¤©зєїжЋҐж”¶е№Іж‰°жњєдїЎеЏ·зљ„жћЃеЊ–жЌџиЂ—
+	float Kj;//дёєжЊ‡е®љзљ„еЋ‹е€¶зі»ж•°
+	float K;//дёєй›·иѕѕе¤©зєїзљ„ж–№еђ‘жЂ§зі»ж•°0.04-0.1
+	float Theta_Half;// й›·иѕѕеЌЉеЉџзЋ‡жіўжќџе®Ѕеє¦ еЌ•дЅЌеє¦
+	vec3 Pos; //дЅЌзЅ®
+};
+	
+#if defined(USE_UBO)
+layout(std140) uniform trit_ShaderParameters_UBO {
+#endif
+
+    // These are used in the vertex shader
+    UNIFORM_DECL_PREFIX mat4 ModelMatrix;
+    UNIFORM_DECL_PREFIX mat4 ViewMatrix;
+    UNIFORM_DECL_PREFIX mat4 ProjectionMatrix;
+    UNIFORM_DECL_PREFIX bool EnableLogDepth;
+    UNIFORM_DECL_PREFIX vec2 CurrentFrustum;
+    UNIFORM_DECL_PREFIX float FarDepthFromNearPlusOne;
+    UNIFORM_DECL_PREFIX float OneOverLog2FarDepthFromNearPlusOne;
+	
+	UNIFORM_DECL_PREFIX vec4 Pt_Gt_lanBuda_thegema;
+	UNIFORM_DECL_PREFIX vec4 N_K_Bn_Fn;
+	UNIFORM_DECL_PREFIX vec3 SDeltaN_T0_GridStepAngle;
+	UNIFORM_DECL_PREFIX vec4 AZS_AZE_PitchS_PitchE;
+	UNIFORM_DECL_PREFIX vec4 MissParameter_Radius_Pos;
+	
+	UNIFORM_DECL_PREFIX vec2 BRadarFlatLoc_BlendColor;
+	UNIFORM_DECL_PREFIX vec4 UniformColor;
+	UNIFORM_DECL_PREFIX vec3 LightDir;
+	UNIFORM_DECL_PREFIX vec4 LightColor;
+
+	UNIFORM_DECL_PREFIX vec4 AntenaLobe;
+	UNIFORM_DECL_PREFIX vec4 AntenaCfg;
+	
+	UNIFORM_DECL_PREFIX int NumDisturb;
+
+	UNIFORM_DECL_PREFIX RadarDisturbMsg Radar_DisturbMsgs[MAX_DISTURB];
+    	
+#if defined(USE_UBO)
+};
+#endif
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+layout(std140) uniform trit_TextureHandles_UBO {
+#endif
+  SAMPLER_DECL_PREFIX sampler2D radar_ColorTable;
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+};
+#endif
+
+
+in float v_depthFromNearPlusOne;
+in vec2  v_textCoord;
+in vec2  v_AZ_PitchR;
+in vec3  v_Normal;
+
+out vec4 out_FragColor;
+ 
+void writeLogDepth(float depth)
+{
+   if (depth <= 0.9999999 || depth > FarDepthFromNearPlusOne) {
+		discard;
+	}
+	gl_FragDepth = log2(depth) * OneOverLog2FarDepthFromNearPlusOne;
+}
+
+vec3 computeNormal(in vec3 oriVertex)
+{
+	vec3 normal = cross(vec3(dFdx(oriVertex.x), dFdx(oriVertex.y), dFdx(oriVertex.z)), vec3(dFdy(oriVertex.x), dFdy(oriVertex.y), dFdy(oriVertex.z)));
+	normal = normalize(normal);
+	return normal;
+}
+
+void main()
+{
+
+	vec4 FragColor = vec4(1.0,1.0,1.0,1.0);
+
+	float lightFactor = dot(v_Normal, LightDir);
+	
+	if(BRadarFlatLoc_BlendColor.y > 0.5)
+	{
+		vec4 finalColor = texture(radar_ColorTable, vec2(0.5, v_textCoord.x));
+	    vec3 blendColor = vec3(finalColor.xyz * (1.0 - UniformColor.a) + UniformColor.rgb * UniformColor.a);
+		FragColor = vec4(blendColor * (1.0 - lightFactor)  + lightFactor * LightColor.xyz*LightColor.w,UniformColor.a);
+	}
+	else
+	{
+	  FragColor = UniformColor;
+	}
+
+    out_FragColor = FragColor;
+
+	if (EnableLogDepth) {
+      writeLogDepth(v_depthFromNearPlusOne); 
+    }
+}
+in vec4 Position;
+in vec3 Normal;
+
+out vec2  v_textCoord;
+out vec2  v_AZ_PitchR;
+out vec3  v_Normal;
+out float v_depthFromNearPlusOne;
+
+
+
+void vertexLogDepth()
+{
+   v_depthFromNearPlusOne = (gl_Position.w - CurrentFrustum.x) + 1.0; 
+}
+
+float absolute(float a)
+{
+	return a < 0.0 ? -a : a;
+}
+
+vec3 AngleToWorldPoint(float radius, float sinDir, float cosDir, float sinEle, float cosEle,float dEleR)
+{
+    vec3 earthPnt;
+	
+    if(BRadarFlatLoc_BlendColor.x > 0.5)
+	{
+	  if(MissParameter_Radius_Pos.x > 0.5)
+	  {
+	      //дїЇд»°и§’дёє0еє¦зљ„жѓ…е†µдё‹,и®Ўз®—ењ†зЋЇ
+		  if(dEleR == 0.0)
+		  {
+			 earthPnt = vec3(radius * sinDir, radius * cosDir, 0.0); 
+		  }
+		  else{
+		     //е…¶д»–зљ„и§’еє¦дё‹пјЊй»и®¤дёє0.0;
+			 earthPnt = vec3(0.0,0.0, 0.0);
+		  } 
+	  }
+	  else{
+	  
+	    if(dEleR == 15.0*DTOR)
+		{
+		  earthPnt = vec3(radius * sinDir, radius * cosDir, 0.0);   
+		}
+		else{
+		  earthPnt = vec3(0.0,0.0, 0.0);
+		}	
+	  }
+	  
+	}
+	else{
+	  earthPnt = vec3(radius * sinDir * cosEle, radius * cosDir * cosEle, radius * sinEle);
+	}
+	
+	return earthPnt;
+}
+
+float distanceEarthSurface(float lat1Rad, float lon1Rad, float lat2Rad, float lon2Rad, float radius)
+{
+	float dLat = (lat2Rad - lat1Rad);
+	float dLon = (lon2Rad - lon1Rad);
+	float a = sin(dLat / 2.0) * sin(dLat / 2.0) + cos(lat1Rad) * cos(lat2Rad) *sin(dLon / 2.0) * sin(dLon / 2.0);
+	float c = 2.0 * atan(sqrt(a),sqrt(1.0 - a));
+	float d = radius * c;
+	return d;
+}
+
+float distanceEarthS(vec2 radarLonLatRad,vec2 disturbLonLatRad)
+{
+	float length = distanceEarthSurface(radarLonLatRad.y, radarLonLatRad.x,disturbLonLatRad.y, disturbLonLatRad.x, 6378137.0);
+	return length;
+}
+
+float rhumbBearing(float lat1Rad, float lon1Rad, float lat2Rad, float lon2Rad)
+{
+	float dLon = lon2Rad - lon1Rad;
+	float dPhi = log(tan(lat2Rad / 2.0 + MAGNETICS_PI / 4.0) / tan(lat1Rad / 2.0 + MAGNETICS_PI / 4.0));
+	if (absolute(dLon) > MAGNETICS_PI) dLon = dLon > 0.0 ? -(2.0 * MAGNETICS_PI - dLon) : (2.0 * MAGNETICS_PI + dLon);
+	float brng = atan(dLon,dPhi);
+	return mod(brng + 2.0 * MAGNETICS_PI, 2.0 * MAGNETICS_PI);
+}
+
+
+float GetDistance(in float dSinEleR, in float dCosEleR, out float dPercent1)
+{
+	float dividend = Pt_Gt_lanBuda_thegema.x * pow(Pt_Gt_lanBuda_thegema.y, 2.0) * pow(Pt_Gt_lanBuda_thegema.z, 2.0) * Pt_Gt_lanBuda_thegema.w * sqrt(N_K_Bn_Fn.x);
+	float divider = pow(4.0 * MAGNETICS_PI, 3.0) * N_K_Bn_Fn.y * SDeltaN_T0_GridStepAngle.y * N_K_Bn_Fn.z * N_K_Bn_Fn.w * SDeltaN_T0_GridStepAngle.x;
+	
+	float RE = sqrt(sqrt(dividend / divider));
+
+	float  RD = sqrt(sqrt(abs(dSinEleR))) * dCosEleR * dCosEleR;
+
+	dPercent1 = RD / 0.7;
+	return RE * RD;
+}
+
+float GetDistance_Disturb(in float dSinEleR, in float dCosEleR, in float dDirR, out float dPercent1)
+{
+	//й›·иѕѕзљ„дё»и¦ЃеЏ‚ж•°
+	float dividend = Pt_Gt_lanBuda_thegema.x * pow(Pt_Gt_lanBuda_thegema.y, 2.0) * pow(Pt_Gt_lanBuda_thegema.z, 2.0) * Pt_Gt_lanBuda_thegema.w * sqrt(N_K_Bn_Fn.x);
+
+	float divider = 0.0;
+	
+	for (int i = 0; i < NumDisturb; i++)
+	{
+		RadarDisturbMsg disMsg = Radar_DisturbMsgs[i];
+		
+		vec2 radarLonLatRad =   vec2(MissParameter_Radius_Pos.z, MissParameter_Radius_Pos.w);
+		vec2 disturbLonLatRad = vec2(disMsg.Pos.x, disMsg.Pos.y);
+        
+		float Rj = distanceEarthS(radarLonLatRad,disturbLonLatRad);
+		float theta = rhumbBearing(radarLonLatRad.y,radarLonLatRad.x, disturbLonLatRad.y, disturbLonLatRad.x);
+		
+		float angle = abs(dDirR - theta);
+		if (angle > MAGNETICS_PI)
+		{
+			angle = MAGNETICS_PI * 2.0 - angle;
+		}
+		theta = RTOD * angle;
+		
+		float Gt = 0.0;
+
+		if (0.0 <= theta && theta <= disMsg.Theta_Half * 0.5)
+		{
+			Gt = Pt_Gt_lanBuda_thegema.y;
+		}
+		else if (disMsg.Theta_Half * 0.5 <= theta && theta <= 90.0)
+		{
+			Gt = Pt_Gt_lanBuda_thegema.y * disMsg.K * pow((disMsg.Theta_Half / theta), 2.0);
+		}
+		else
+		{
+			Gt = Pt_Gt_lanBuda_thegema.y * disMsg.K * pow((disMsg.Theta_Half / 90.0), 2.0);
+		}
+
+		divider += disMsg.Pj * disMsg.Gj * Gt * N_K_Bn_Fn.z * disMsg.Yj / (disMsg.Bj * pow(Rj, 2.0));
+	}
+
+	divider = divider * 4.0 * MAGNETICS_PI;
+	
+	float RE = sqrt(sqrt(dividend / divider));
+	float RD = sqrt(sqrt(abs(dSinEleR))) * dCosEleR * dCosEleR;
+	
+	dPercent1 = RD / 0.7;
+	
+	return RE * RD ;
+}
+
+
+float GetDistance_Disturb_NoRadarMsg(in float radius, in float dSinEleR, in float dCosEleR, in float dDirR,in float dEleR, out float dPercent1)
+{	   
+	 
+	//й›·иѕѕзљ„дё»и¦ЃеЏ‚ж•°
+	float dividend = radius;
+
+	float divider = 0.0;
+	
+	for (int i = 0; i < NumDisturb; i++)
+	{
+		RadarDisturbMsg disMsg = Radar_DisturbMsgs[i];
+		
+		vec2 radarLonLatRad =   vec2(MissParameter_Radius_Pos.z, MissParameter_Radius_Pos.w);
+		vec2 disturbLonLatRad = vec2(disMsg.Pos.x, disMsg.Pos.y);
+        
+		float Rj = distanceEarthS(radarLonLatRad,disturbLonLatRad);
+		float theta = rhumbBearing(radarLonLatRad.y,radarLonLatRad.x, disturbLonLatRad.y, disturbLonLatRad.x);
+		
+		float angle = abs(dDirR - theta);
+		if (angle > MAGNETICS_PI)
+		{
+			angle = MAGNETICS_PI * 2.0 - angle;
+		}
+		theta = RTOD * angle;
+		
+		float Gt = 0.0;
+
+		if (0.0 <= theta && theta <= disMsg.Theta_Half * 0.5)
+		{
+			Gt = 1.0;
+		}
+		else if (disMsg.Theta_Half * 0.5 <= theta && theta <= 90.0)
+		{
+			Gt = disMsg.K * pow((disMsg.Theta_Half / theta), 2.0);
+		}
+		else
+		{
+			Gt = disMsg.K * pow((disMsg.Theta_Half / 90.0), 2.0);
+		}
+
+		divider += disMsg.Pj * disMsg.Gj * Gt *4.0* disMsg.Yj / (disMsg.Bj * pow(Rj, 2.0));
+	}
+
+    
+   
+	 if(NumDisturb != 0 )
+	 {
+	    float RD = sqrt(sqrt(abs(dSinEleR))) * dCosEleR * dCosEleR;
+        //dPercent1 = 1.0 - RD / 0.7;
+		
+		dPercent1 = 1.0 - abs(dEleR+ MAGNETICS_PI *0.5) / MAGNETICS_PI;
+	 
+	    divider = divider * 4.0 * MAGNETICS_PI;
+	    float RE = sqrt(sqrt(dividend / divider));
+		if(RE > dividend)
+		{
+		    RE = dividend;
+		}
+		return RE;
+	 }
+	 else{
+	 
+	     float RD = sqrt(sqrt(abs(dSinEleR))) * dCosEleR * dCosEleR;
+		// dPercent1 = 1.0- RD / 0.7;
+		 
+	     dPercent1 = 1.0 - abs(dEleR + MAGNETICS_PI*0.5) / 3.1415926;
+	     return dividend ;
+	 }
+	
+
+}
+
+
+		
+void main()
+{
+    //Position.x = sinDir ;Position.y = cosDir; Position.z =  sinEle; Position.w = cosEle;
+	//Normal.x = dDirR ,Normal.y = dEleR ,Normal.z = 0.0 з”ЁжќҐеЊєе€†meshе’ЊиЎҐдёЃ;
+	
+	vec4 PositionTemp = Position;
+	vec3 NormalTemp = Normal;
+	
+	float AZStartAngle = AZS_AZE_PitchS_PitchE.x;
+	float AZEndAngle = AZS_AZE_PitchS_PitchE.y;
+	
+	bool judgeAZStart = abs(AZStartAngle) < 0.00001;
+	bool judgeAZEnd = abs(AZEndAngle- MAGNETICS_2PI) < 0.00001;
+	
+	int bResult = -1;
+	if(judgeAZStart == true && judgeAZEnd == true)
+	{
+	   if(NormalTemp.x < 0.0)
+	   {
+	      NormalTemp.x = 0.0;
+		  PositionTemp.x = sin(0.0);
+		  PositionTemp.y = cos(0.0);
+	   }
+	   
+	   if(NormalTemp.x > MAGNETICS_2PI)
+	   {
+	      NormalTemp.x = MAGNETICS_2PI;
+		  PositionTemp.x = sin(MAGNETICS_2PI);
+		  PositionTemp.y = cos(MAGNETICS_2PI);
+	   } 
+	}
+
+	if((NormalTemp.x < AZStartAngle)|| (NormalTemp.x > AZEndAngle) )
+	{
+	     NormalTemp = vec3(0.0);
+	     PositionTemp = vec4(0.0);  
+	}	
+	
+	if((NormalTemp.y < AZS_AZE_PitchS_PitchE.z)|| (NormalTemp.y > AZS_AZE_PitchS_PitchE.w) )
+	{
+	   NormalTemp = vec3(0.0);
+	   PositionTemp = vec4(0.0);
+	}	
+	
+	float dPercent1 = 0.0;
+	float disRadar =  0.0;
+	
+	if(MissParameter_Radius_Pos.x < 0.5)
+	{
+	   if(NumDisturb > 0)
+	   {
+	     float disMax = GetDistance(PositionTemp.z,PositionTemp.w,dPercent1);
+		 disRadar = GetDistance_Disturb(PositionTemp.z,PositionTemp.w,NormalTemp.x,dPercent1);
+		 if(disRadar > disMax)
+		 {
+		    disRadar= disMax;
+		 }   
+	   }
+	   else
+	   {
+	     disRadar = GetDistance(PositionTemp.z,PositionTemp.w,dPercent1);
+	   }  
+	}
+	else
+	{
+	   disRadar = GetDistance_Disturb_NoRadarMsg(MissParameter_Radius_Pos.y,PositionTemp.z,PositionTemp.w,NormalTemp.x,NormalTemp.y,dPercent1);  
+	}
+	
+    vec3 modelPoint = AngleToWorldPoint(disRadar,PositionTemp.x,PositionTemp.y,PositionTemp.z,PositionTemp.w,NormalTemp.y);
+	if(modelPoint == vec3(0.0,0.0,0.0))
+	{
+	   v_Normal = vec3(1.0,0.,0.0);
+	}
+	else{
+	    v_Normal = normalize(modelPoint);
+	}
+	
+    gl_Position =  ProjectionMatrix *ViewMatrix * ModelMatrix* vec4(modelPoint.z,modelPoint.x,modelPoint.y, 1.0);
+	
+	if (EnableLogDepth) {
+		vertexLogDepth();
+	}
+	
+	v_textCoord = vec2(dPercent1,0.9);
+	v_AZ_PitchR = vec2(Normal.x,Normal.y);
+		
+}
+precision highp float;
+precision highp int;
+precision highp sampler2D;
+
+#ifdef USE_UBO
+#define UNIFORM_DECL_PREFIX
+#else
+#define UNIFORM_DECL_PREFIX uniform
+#endif
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+#define SAMPLER_DECL_PREFIX
+#else
+#define SAMPLER_DECL_PREFIX uniform
+#endif
+
+#define MAGNETICS_PI 3.14159265
+#define DTOR  0.017453292
+#define RTOD  57.295780490
+
+
+#if defined(USE_UBO)
+layout(std140) uniform trit_ShaderParameters_UBO {
+#endif
+
+    // These are used in the vertex shader
+    UNIFORM_DECL_PREFIX mat4 ModelMatrix;
+    UNIFORM_DECL_PREFIX mat4 ViewMatrix;
+    UNIFORM_DECL_PREFIX mat4 ProjectionMatrix;
+    UNIFORM_DECL_PREFIX bool EnableLogDepth;
+    UNIFORM_DECL_PREFIX vec2 CurrentFrustum;
+    UNIFORM_DECL_PREFIX float FarDepthFromNearPlusOne;
+    UNIFORM_DECL_PREFIX float OneOverLog2FarDepthFromNearPlusOne;
+	
+	UNIFORM_DECL_PREFIX vec4 UniformColor;
+    	
+#if defined(USE_UBO)
+};
+#endif
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+layout(std140) uniform trit_TextureHandles_UBO {
+#endif
+  SAMPLER_DECL_PREFIX sampler2D radar_ColorTable;
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+};
+#endif
+
+
+in float v_depthFromNearPlusOne;
+
+out vec4 out_FragColor;
+ 
+void writeLogDepth(float depth)
+{
+   if (depth <= 0.9999999 || depth > FarDepthFromNearPlusOne) {
+		discard;
+	}
+	gl_FragDepth = log2(depth) * OneOverLog2FarDepthFromNearPlusOne;
+}
+
+void main()
+{
+    out_FragColor = UniformColor;
+
+	if (EnableLogDepth) {
+      writeLogDepth(v_depthFromNearPlusOne); 
+    }
+}
+in vec3 Position;
+
+out float v_depthFromNearPlusOne;
+
+void vertexLogDepth()
+{
+   v_depthFromNearPlusOne = (gl_Position.w - CurrentFrustum.x) + 1.0; 
+}
+
+void main()
+{
+    gl_Position =  ProjectionMatrix *ViewMatrix * ModelMatrix* vec4(Position.x,Position.y,Position.z, 1.0);
+
+	if (EnableLogDepth) {
+		vertexLogDepth();
+	}		
+}
+precision highp float;
+precision highp int;
+precision highp sampler2D;
+
+#ifdef USE_UBO
+#define UNIFORM_DECL_PREFIX
+#else
+#define UNIFORM_DECL_PREFIX uniform
+#endif
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+#define SAMPLER_DECL_PREFIX
+#else
+#define SAMPLER_DECL_PREFIX uniform
+#endif
+
+#define MAGNETICS_PI 3.14159265
+#define DTOR  0.017453292
+#define RTOD  57.295780490
+
+
+#if defined(USE_UBO)
+layout(std140) uniform trit_ShaderParameters_UBO {
+#endif
+
+    // These are used in the vertex shader
+    UNIFORM_DECL_PREFIX mat4 ModelMatrix;
+    UNIFORM_DECL_PREFIX mat4 ViewMatrix;
+    UNIFORM_DECL_PREFIX mat4 ProjectionMatrix;
+    UNIFORM_DECL_PREFIX bool EnableLogDepth;
+    UNIFORM_DECL_PREFIX vec2 CurrentFrustum;
+    UNIFORM_DECL_PREFIX float FarDepthFromNearPlusOne;
+    UNIFORM_DECL_PREFIX float OneOverLog2FarDepthFromNearPlusOne;
+	
+	UNIFORM_DECL_PREFIX float StartWidth;
+	UNIFORM_DECL_PREFIX float EndWidth;
+	UNIFORM_DECL_PREFIX float Length;
+	UNIFORM_DECL_PREFIX vec3  Time_Kadu_WaveType;
+	
+	UNIFORM_DECL_PREFIX float Radius;
+	UNIFORM_DECL_PREFIX float WidthAngle;
+	UNIFORM_DECL_PREFIX float HeightAngle;
+	
+	UNIFORM_DECL_PREFIX vec4 UniformColor;
+    	
+#if defined(USE_UBO)
+};
+#endif
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+layout(std140) uniform trit_TextureHandles_UBO {
+#endif
+  SAMPLER_DECL_PREFIX sampler2D ColorTable;
+
+#if defined(USE_UBO) && defined(BINDLESS_TEXTURES)
+};
+#endif
+
+
+in float v_depthFromNearPlusOne;
+in vec2  v_texCoord;
+
+out vec4 out_FragColor;
+ 
+void writeLogDepth(float depth)
+{
+   if (depth <= 0.9999999 || depth > FarDepthFromNearPlusOne) {
+		discard;
+	}
+	gl_FragDepth = log2(depth) * OneOverLog2FarDepthFromNearPlusOne;
+}
+
+void main()
+{
+    vec4 finalColor = texture(ColorTable, vec2(v_texCoord.x,(v_texCoord.y - Time_Kadu_WaveType.x)/Time_Kadu_WaveType.y));
+	
+    vec3 whiteColor = vec3(1.0);
+	vec3 result = whiteColor*v_texCoord.y + UniformColor.xyz *(1.0 - v_texCoord.y);
+	
+	if(Time_Kadu_WaveType.z > 0.5)
+	{
+	  out_FragColor = vec4(result.xyz,UniformColor.w);
+	}
+	else
+	{
+	    out_FragColor = vec4(result.xyz,finalColor.w * UniformColor.w);
+	}
+   
+	if (EnableLogDepth) {
+      writeLogDepth(v_depthFromNearPlusOne); 
+    }
+}
+in vec4 Position;
+in vec4 TexCoord;
+
+out float v_depthFromNearPlusOne;
+out vec2  v_texCoord;
+
+void vertexLogDepth()
+{
+   v_depthFromNearPlusOne = (gl_Position.w - CurrentFrustum.x) + 1.0; 
+}
+
+void main()
+{ 
+    vec3 pointTemp = vec3(0.0);
+
+	if(Time_Kadu_WaveType.z < 0.5)
+	{
+	   if(Position.w  < 0.0)
+		{
+		  pointTemp =vec3(StartWidth * Position.x, 0.0, StartWidth * Position.z);
+		}
+		else
+		{
+		  pointTemp = vec3(EndWidth * Position.x,Length* Position.y, EndWidth * Position.z);
+		}
+		
+		v_texCoord = vec2(TexCoord.xy);	
+	}
+	else{
+	    
+		float length = Radius * tan(HeightAngle * DTOR *0.5);
+	
+	    if(Position.w  < 0.0)
+		{
+		  pointTemp = vec3( Position.y * length,Radius * Position.x, Radius * Position.z);
+		}
+		else
+		{
+		   pointTemp = vec3(Position.y * length,Radius * Position.x, Radius * Position.z);
+	    }
+		
+		v_texCoord = vec2(TexCoord.xz);
+		
+		 if(abs(TexCoord.w) > WidthAngle*0.5 )
+		 {
+			 pointTemp = vec3(0.0);
+		 }
+
+	}
+	
+    gl_Position =  ProjectionMatrix *ViewMatrix * ModelMatrix* vec4(pointTemp.x,pointTemp.y,pointTemp.z, 1.0);
+
+	if (EnableLogDepth) {
+		vertexLogDepth();
+	}	
+
+    
+}            я  (S ряS ряS ряS ряS ряS ряS ряS ряS ряS ряS ряS ряS ряS ряS ряS ряP сяP сяP сяP сяP сяP сяP сяP сяP сяP сяP сяP сяP сяP сяP сяP сяM уяM уяM уяM уяM уяM уяM уяM уяM уяM уяM уяM уяM уяM уяM уяM уяI фяI фяI фяI фяI фяI фяI фяI фяI фяI фяI фяI фяI фяI фяI фяI фяF хяF хяF хяF хяF хяF хяF хяF хяF хяF хяF хяF хяF хяF хяF хяF хяC хяC хяC хяC хяC хяC хяC хяC хяC хяC хяC хяC хяC хяC хяC хяC хя? ця? ця? ця? ця? ця? ця? ця? ця? ця? ця? ця? ця? ця? ця? ця? ця< чя< чя< чя< чя< чя< чя< чя< чя< чя< чя< чя< чя< чя< чя< чя< чя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя9 шя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя5 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя2 щя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя. ъя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя+ ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя' ыя$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья$ ья! ья! ья! ья! ья! ья! ья! ья! ья! ья! ья! ья! ья! ья! ья! ья! ья эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя !ья !ья !ья !ья !ья !ья !ья !ья !ья !ья !ья !ья !ья !ья !ья !ья $ья $ья $ья $ья $ья $ья $ья $ья $ья $ья $ья $ья $ья $ья $ья $ья 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя 'ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя +ыя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя .ъя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 2щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 5щя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя 9шя <чя <чя <чя <чя <чя <чя <чя <чя <чя <чя <чя <чя <чя <чя <чя <чя ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця ?ця Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Cхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Fхя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Iфя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Mуя Pся Pся Pся Pся Pся Pся Pся Pся Pся Pся Pся Pся Pся Pся Pся Pся Sря Sря Sря Sря Sря Sря Sря Sря Sря Sря Sря Sря Sря Sря Sря Sря Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Wпя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя Zоя ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня ]ня `ля `ля `ля `ля `ля `ля `ля `ля `ля `ля `ля `ля `ля `ля `ля `ля dкя dкя dкя dкя dкя dкя dкя dкя dкя dкя dкя dкя dкя dкя dкя dкя gйя gйя gйя gйя gйя gйя gйя gйя gйя gйя gйя gйя gйя gйя gйя gйя jзя jзя jзя jзя jзя jзя jзя jзя jзя jзя jзя jзя jзя jзя jзя jзя mжя mжя mжя mжя mжя mжя mжя mжя mжя mжя mжя mжя mжя mжя mжя mжя pдя pдя pдя pдя pдя pдя pдя pдя pдя pдя pдя pдя pдя pдя pдя pдя tгя tгя tгя tгя tгя tгя tгя tгя tгя tгя tгя tгя tгя tгя tгя tгя wбя wбя wбя wбя wбя wбя wбя wбя wбя wбя wбя wбя wбя wбя wбя wбя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя zЯя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя }Юя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ЂЬя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя ѓЪя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя †Шя ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ‰Ця ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЊХя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ЏУя ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ‘Ся ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя ”Пя —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня —Ня љКя љКя љКя љКя љКя љКя љКя љКя љКя љКя љКя љКя љКя љКя љКя љКя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя ќИя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя џЖя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ўДя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя ҐВя §їя §їя §їя §їя §їя §їя §їя §їя §їя §їя §їя §їя §їя §їя §їя §їя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ЄЅя ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я ­»я Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя Їёя І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я І¶я ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ґґя ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я ·±я №®я №®я №®я №®я №®я №®я №®я №®я №®я №®я №®я №®я №®я №®я №®я №®я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я »¬я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я ѕ©я А§я А§я А§я А§я А§я А§я А§я А§я А§я А§я А§я А§я А§я А§я А§я А§я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я В¤я ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя ЕЎя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Зџя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Йњя Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Л™я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я Н–я П”я П”я П”я П”я П”я П”я П”я П”я П”я П”я П”я П”я П”я П”я П”я П”я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я С‘я УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя УЋя Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Х‹я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Ч€я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Щ…я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ы‚я Ья Ья Ья Ья Ья Ья Ья Ья Ья Ья Ья Ья Ья Ья Ья Ья Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я Ю|я аyя аyя аyя аyя аyя аyя аyя аyя аyя аyя аyя аyя аyя аyя аyя аyя бvя бvя бvя бvя бvя бvя бvя бvя бvя бvя бvя бvя бvя бvя бvя бvя гsя гsя гsя гsя гsя гsя гsя гsя гsя гsя гsя гsя гsя гsя гsя гsя еpя еpя еpя еpя еpя еpя еpя еpя еpя еpя еpя еpя еpя еpя еpя еpя жlя жlя жlя жlя жlя жlя жlя жlя жlя жlя жlя жlя жlя жlя жlя жlя иiя иiя иiя иiя иiя иiя иiя иiя иiя иiя иiя иiя иiя иiя иiя иiя йfя йfя йfя йfя йfя йfя йfя йfя йfя йfя йfя йfя йfя йfя йfя йfя кcя кcя кcя кcя кcя кcя кcя кcя кcя кcя кcя кcя кcя кcя кcя кcя м`я м`я м`я м`я м`я м`я м`я м`я м`я м`я м`я м`я м`я м`я м`я м`я н\я н\я н\я н\я н\я н\я н\я н\я н\я н\я н\я н\я н\я н\я н\я н\я оYя оYя оYя оYя оYя оYя оYя оYя оYя оYя оYя оYя оYя оYя оYя оYя пVя пVя пVя пVя пVя пVя пVя пVя пVя пVя пVя пVя пVя пVя пVя пVя сSя сSя сSя сSя сSя сSя сSя сSя сSя сSя сSя сSя сSя сSя сSя сSя тOя тOя тOя тOя тOя тOя тOя тOя тOя тOя тOя тOя тOя тOя тOя тOя уLя уLя уLя уLя уLя уLя уLя уLя уLя уLя уLя уLя уLя уLя уLя уLя фIя фIя фIя фIя фIя фIя фIя фIя фIя фIя фIя фIя фIя фIя фIя фIя хEя хEя хEя хEя хEя хEя хEя хEя хEя хEя хEя хEя хEя хEя хEя хEя цBя цBя цBя цBя цBя цBя цBя цBя цBя цBя цBя цBя цBя цBя цBя цBя ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч?я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ч;я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я ш8я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я щ4я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ1я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ъ-я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы*я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ы'я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь#я ь я ь я ь я ь я ь я ь я ь я ь я ь я ь я ь я ь я ь я ь я ь я ь я эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя эя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя юя ю я ю я ю я ю я ю я ю я ю я ю я ю я ю я ю я ю я ю я ю я ю я ю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю я	ю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я!ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я%ь я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я(ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я,ы я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я/ъ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я3щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я6щ я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я9ш я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я=ч я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц я@ц яDх яDх яDх яDх яDх яDх яDх яDх яDх яDх яDх яDх яDх яDх яDх яDх яGф яGф яGф яGф яGф яGф яGф яGф яGф яGф яGф яGф яGф яGф яGф яGф яJу яJу яJу яJу яJу яJу яJу яJу яJу яJу яJу яJу яJу яJу яJу яJу яNт яNт яNт яNт яNт яNт яNт яNт яNт яNт яNт яNт яNт яNт яNт яNт яQс яQс яQс яQс яQс яQс яQс яQс яQс яQс яQс яQс яQс яQс яQс яQс яTр яTр яTр яTр яTр яTр яTр яTр яTр яTр яTр яTр яTр яTр яTр яTр яXп яXп яXп яXп яXп яXп яXп яXп яXп яXп яXп яXп яXп яXп яXп яXп я[о я[о я[о я[о я[о я[о я[о я[о я[о я[о я[о я[о я[о я[о я[о я[о я^м я^м я^м я^м я^м я^м я^м я^м я^м я^м я^м я^м я^м я^м я^м я^м яaл яaл яaл яaл яaл яaл яaл яaл яaл яaл яaл яaл яaл яaл яaл яaл яeк яeк яeк яeк яeк яeк яeк яeк яeк яeк яeк яeк яeк яeк яeк яeк яhи яhи яhи яhи яhи яhи яhи яhи яhи яhи яhи яhи яhи яhи яhи яhи яkз яkз яkз яkз яkз яkз яkз яkз яkз яkз яkз яkз яkз яkз яkз яkз яnе яnе яnе яnе яnе яnе яnе яnе яnе яnе яnе яnе яnе яnе яnе яnе яqд яqд яqд яqд яqд яqд яqд яqд яqд яqд яqд яqд яqд яqд яqд яqд яtв яtв яtв яtв яtв яtв яtв яtв яtв яtв яtв яtв яtв яtв яtв яtв яwб яwб яwб яwб яwб яwб яwб яwб яwб яwб яwб яwб яwб яwб яwб яwб яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ яzЯ я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э я}Э яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ яЃЫ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я„Ъ я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я†Ш я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц я‰Ц яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЊФ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ яЏТ я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я’Р я•О я•О я•О я•О я•О я•О я•О я•О я•О я•О я•О я•О я•О я•О я•О я•О яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ я›К я›К я›К я›К я›К я›К я›К я›К я›К я›К я›К я›К я›К я›К я›К я›К яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ яќИ я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж я Ж яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яЈГ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яҐБ яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї яЁї я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я«Ѕ я­є я­є я­є я­є я­є я­є я­є я­є я­є я­є я­є я­є я­є я­є я­є я­є я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё я°ё яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яІµ яµі яµі яµі яµі яµі яµі яµі яµі яµі яµі яµі яµі яµі яµі яµі яµі я·° я·° я·° я·° я·° я·° я·° я·° я·° я·° я·° я·° я·° я·° я·° я·° яє® яє® яє® яє® яє® яє® яє® яє® яє® яє® яє® яє® яє® яє® яє® яє® яј« яј« яј« яј« яј« яј« яј« яј« яј« яј« яј« яј« яј« яј« яј« яј« яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яѕ© яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яБ¦ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яГЈ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЕЎ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЗћ яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яЙ› яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яМ яО– яО– яО– яО– яО– яО– яО– яО– яО– яО– яО– яО– яО– яО– яО– яО– яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яР“ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яТђ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яФЌ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЦЉ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЧ‡ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЩ„ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЫЃ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЭ~ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яЮ{ яаx яаx яаx яаx яаx яаx яаx яаx яаx яаx яаx яаx яаx яаx яаx яаx явu явu явu явu явu явu явu явu явu явu явu явu явu явu явu явu ягr ягr ягr ягr ягr ягr ягr ягr ягr ягr ягr ягr ягr ягr ягr ягr яеo яеo яеo яеo яеo яеo яеo яеo яеo яеo яеo яеo яеo яеo яеo яеo яжl яжl яжl яжl яжl яжl яжl яжl яжl яжl яжl яжl яжl яжl яжl яжl яиh яиh яиh яиh яиh яиh яиh яиh яиh яиh яиh яиh яиh яиh яиh яиh яйe яйe яйe яйe яйe яйe яйe яйe яйe яйe яйe яйe яйe яйe яйe яйe ялb ялb ялb ялb ялb ялb ялb ялb ялb ялb ялb ялb ялb ялb ялb ялb ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ям_ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ ян\ япX япX япX япX япX япX япX япX япX япX япX япX япX япX япX япX ярU ярU ярU ярU ярU ярU ярU ярU ярU ярU ярU ярU ярU ярU ярU ярU ясR ясR ясR ясR ясR ясR ясR ясR ясR ясR ясR ясR ясR ясR ясR ясR ятN ятN ятN ятN ятN ятN ятN ятN ятN ятN ятN ятN ятN ятN ятN ятN яуK яуK яуK яуK яуK яуK яуK яуK яуK яуK яуK яуK яуK яуK яуK яуK яфH яфH яфH яфH яфH яфH яфH яфH яфH яфH яфH яфH яфH яфH яфH яфH яхD яхD яхD яхD яхD яхD яхD яхD яхD яхD яхD яхD яхD яхD яхD яхD яцA яцA яцA яцA яцA яцA яцA яцA яцA яцA яцA яцA яцA яцA яцA яцA яч> яч> яч> яч> яч> яч> яч> яч> яч> яч> яч> яч> яч> яч> яч> яч> яш: яш: яш: яш: яш: яш: яш: яш: яш: яш: яш: яш: яш: яш: яш: яш: яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 яш7 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 ящ3 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ0 яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яъ- яы) яы) яы) яы) яы) яы) яы) яы) яы) яы) яы) яы) яы) яы) яы) яы) яь& яь& яь& яь& яь& яь& яь& яь& яь& яь& яь& яь& яь& яь& яь& яь& яь" яь" яь" яь" яь" яь" яь" яь" яь" яь" яь" яь" яь" яь" яь" яь" яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яэ яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю
+ яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яю яя  яя  яя  яя  яя  яя  яя  яя  яя  яя  яя  яя  яя  яя  яя  яя  я            ђ  (л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяя я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я я л-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љял-љяяяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя яяя 

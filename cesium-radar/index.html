@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ch">
+<head>
+    <meta charset="UTF-8">
+    <title>cesium雷达</title>
+    <link rel="stylesheet" href="./Cesium/Widgets/widgets.css">
+    <style>
+        html, body
+        {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #cesiumContainer
+        {
+            width: 100%;
+            height: 100%;
+        }
+
+        #cesiumContainer .cesium-viewer-bottom
+        {
+            display: none;
+        }
+        #cesiumContainer.cesium-widget-credits
+        {
+            display: none !important; /*去除Cesium默认版权信息*/
+        }
+    </style>
+</head>
+<body>
+<div id="cesiumContainer">
+</div>
+<script type="importmap">
+  {
+    "imports": {
+    "lil-gui": "./lil-gui.module.min.js"
+    }
+  }
+</script>
+<!--<script src="../../../framework/Demo/lib/Cesium/Cesium.js" type="text/javascript"></script>-->
+<script src="./Cesium/Cesium.js"></script>
+<script src="./lib/RadarModule.js"></script>
+<script type="module">
+    import { GUI } from 'lil-gui';
+    import {EarthRadarObject,Radarparam,RadarDisturb,MagneticsWave,RadarGroup} from './lib/EarthRadarCesuim.js';
+    // import {EarthRadarObject,Radarparam,RadarDisturb,RadarGroup} from '../example/libs/EarthRadar.es6.js';
+    Cesium.Ion.defaultAccessToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMWZiLTQzYjYtYTQ0OS1kMWFjYmFkNjc5YzciLCJpZCI6NTc3MzMsImlhdCI6MTYyNzg0NTE4Mn0.XcKpgANiY19MC4bdFUXMVEBToBmqS8kuYpUlxJHYZxk';
+/*    var viewer = new Cesium.Viewer("cesiumContainer", {
+        baseLayer: new Cesium.ImageryLayer(
+            new Cesium.UrlTemplateImageryProvider({
+                url: 'https://webst02.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
+            })
+        ),
+        // terrainProvider: await Cesium.CesiumTerrainProvider.fromUrl(
+        //     // 'https://www.supermapol.com/realspace/services/3D-stk_terrain/rest/realspace/datas/info/data/path',
+        //     // 'https://engine.piesat.cn/earthweb/shuju/taiwan10mDEM/',
+        //     'http://data.mars3d.cn/terrain',
+        //
+        //     {
+        //         requestVertexNormals: true
+        //     }),
+        timeline: true,
+        animation: true,
+        useDefaultRenderLoop: false,
+        homeButton: false
+    });*/
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+        // imageryProvider: new Cesium.BingMapsImageryProvider({
+        //     url: 'https://dev.virtualearth.net',
+        //     key: 'AqM_f-xO0YW-52FSEnMmZJK__RaOgLWrvYAwbv6_BCbu6oFegBVk4LzzIxevoRHQ'
+        // }),
+          imageryProvider: new Cesium.UrlTemplateImageryProvider({
+          // 
+          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+
+          // url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          tilingScheme: new Cesium.WebMercatorTilingScheme(),
+          minimumLevel: 2,
+          maximumLevel: 18
+        }),
+        contextOptions: {
+            requestWebgl2: true
+        },
+   /*     terrainProvider: new Cesium.CesiumTerrainProvider({
+            url: "https://www.supermapol.com/realspace/services/3D-stk_terrain/rest/realspace/datas/info/data/path",
+            requestWaterMask: true,
+            requestVertexNormals: true,
+        }),*/
+    });
+    // Cesium.Ellipsoid.reset(6378137.0,6378137.0,6378137.0);
+    // viewer.scene.mode = 1
+
+    let radarObject=null;
+    let radarParam1,radarParam2,radarDisturb1,radarGroup=null;
+    let magneticsWave=null;
+    let magneticsWave2=null;
+    let longitude=120.892493602;
+    let latitude=24.822959702;
+    let height=2000;
+    let planeEntity=null;
+    let orientation=null;
+
+    viewer.scene.logarithmicDepthBuffer = true;
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+    viewer.scene.debugShowFramesPerSecond = true;
+    viewer.scene.skyAtmosphere.show = false;
+    viewer.scene.skyBox.show = false;
+    viewer.scene.sun.show = false;
+
+    //获取canvas
+    let canvas = viewer.canvas;
+    canvas.id = 'canvas';
+    let angle=0;
+    function render() {
+        // 你的渲染逻辑
+        // 例如更新相机位置、添加实体等
+        if (radarParam1){
+            angle+=0.5
+            radarParam1.RadarAntenaDirAngle=angle;
+            if (angle >=360) angle=0;
+        }
+        if (planeEntity&&radarParam1&&radarDisturb1){
+            var position = planeEntity.position.getValue(viewer.clock.currentTime );
+            if (!position) return;
+            // 获取当前使用的地球椭球体
+            var ellipsoid = viewer.scene.globe.ellipsoid;
+            var cartographic=  ellipsoid.cartesianToCartographic(position);
+            // 获取经度、纬度和高度
+            var disturbLongitude = Cesium.Math.toDegrees(cartographic.longitude);
+            var disturbLatitude = Cesium.Math.toDegrees(cartographic.latitude);
+            var disturbHeight = cartographic.height;
+            radarDisturb1.UpdatedisturbPosition(disturbLongitude,disturbLatitude,disturbHeight);
+            // radarParam1.Update();
+            // radarParam2.Update();
+            if(magneticsWave){
+                magneticsWave.SetMagneticsWaveStartPosition(disturbLongitude,disturbLatitude,disturbHeight);
+                magneticsWave.SetMagneticsWaveEndPosition(longitude,latitude,height);
+                magneticsWave2.SetMagneticsWaveStartPosition(disturbLongitude,disturbLatitude,disturbHeight);
+                magneticsWave2.SetMagneticsWaveEndPosition(longitude+3,latitude,height);
+            }
+
+            //修正飞机初始姿态
+            let heading = Cesium.Math.toRadians(0)
+            // let pitch = Cesium.Math.toRadians(0)
+            // let roll = Cesium.Math.toRadians(0)
+            let headingPitchRoll=new Cesium.HeadingPitchRoll(heading, 0, 0)
+            let result0=new Cesium.Quaternion();
+            Cesium.Quaternion.fromHeadingPitchRoll(headingPitchRoll, result0)
+            let result=new Cesium.Quaternion();
+            Cesium.Quaternion.multiply(orientation.getValue(viewer.clock._currentTime), result0, result)
+            planeEntity.orientation=result;
+        }
+        // 在渲染下一帧之前，调用requestAnimationFrame
+        requestAnimationFrame(render);
+    }
+
+    // 启动循环渲染
+    requestAnimationFrame(render);
+    viewer.camera.flyTo({
+        destination : Cesium.Cartesian3.fromDegrees(longitude, latitude-0.5, height*50),
+        orientation : {
+            heading : Cesium.Math.toRadians(0.0),
+            pitch : Cesium.Math.toRadians(-45),
+            roll : 0,
+        }
+    })
+
+    createRadarModule(/* optional default settings */).then(function (module) {
+        radarObject = new EarthRadarObject(viewer);//创建雷达对象
+        viewer.scene.primitives.add(radarObject);
+        addRadar();
+
+    })
+
+    let cuTime= new Date();// ("2024/04/24 19:00:00");
+    var startTime=Cesium.JulianDate.fromDate (cuTime);
+
+    const stopTime = Cesium.JulianDate.addSeconds(
+        startTime,
+        90,
+        new Cesium.JulianDate()
+    );
+    viewer.clock.startTime = startTime.clone();
+    viewer.clock.currentTime = startTime.clone();
+    viewer.clock.stopTime = stopTime.clone();
+    viewer.clock.multiplier = 5;
+    // viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // 时钟范围为循环到停止
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // 时钟范围为循环到停止
+    function createModel() {
+        const property = computeFly(); // 计算飞行轨迹
+        orientation = new Cesium.VelocityOrientationProperty(property);
+        const viewFrom = orientation.getValue(startTime);
+        // viewFrom.x = -60;
+        //     viewFrom.z = -20;
+        //     viewFrom.x = -80;
+        planeEntity = viewer.entities.add({
+            name: "plane",
+            id:'displane',
+            availability: new Cesium.TimeIntervalCollection([
+                // 时间间隔集合
+                new Cesium.TimeInterval({ start: startTime, stop: stopTime }),
+            ]),
+            position: property,
+            orientation: orientation,
+            viewFrom: viewFrom,
+            model: {
+                uri: '../model/plane.glb', // 模型的URI
+                minimumPixelSize: 60, // 最小像素大小
+                maximumScale: 5000, // 最大缩放比例
+                imageBasedLightingFactor: new Cesium.Cartesian2(40, 10),
+                scale: 50,
+            },
+        });
+        viewer.clock.shouldAnimate = true; // 是否应该进行动画
+    }
+
+    function computeFly() {
+        const property = new Cesium.SampledPositionProperty(); // 定位属性
+        const height=20000;
+        const source = [
+            [120.819644806,25.451916258, height],
+            [120.391178009,24.880627196, height],
+            [119.786929962,24.188488524, height],
+            [119.407901642,23.573254149, height],
+            [119.407901642,22.914074462, height],
+            [119.847354767,22.232922118, height],
+            [120.770206329,22.276867430, height],
+            [122.330264923,25.484875243, height],
+            [121.596927520,25.597485106, height],
+            [120.819644806,25.451916258, height],
+        ];
+        const times = [];
+        source.forEach((line, index) => {
+            times.push(index * 10);
+        });
+        // 取样位置 相当于一个集合
+        for (let i = 0; i < source.length; i++) {
+            let time = Cesium.JulianDate.addSeconds(
+                startTime,
+                times[i],
+                new Cesium.JulianDate()
+            );
+            let position = Cesium.Cartesian3.fromDegrees(
+                source[i][0],
+                source[i][1],
+                source[i][2],
+            );
+            // 添加位置，和时间对应
+            property.addSample(time, position);
+        }
+        //////////////////////////////////////////////////////////////
+        return property;
+    }
+    // 添加雷达
+    function addRadar(){
+        if (radarParam1==null){
+            radarParam1=new Radarparam();
+            radarObject.CreateRadar(radarParam1);
+            radarParam1.UpdateRadarPosition(longitude,latitude,height);
+        }
+        if (radarParam2==null){
+            radarParam2=new Radarparam();
+            radarObject.CreateRadar(radarParam2);
+            radarParam2.UpdateRadarPosition(longitude+3,latitude,height);
+
+        }
+    }
+    const gui = new GUI();
+    const aaFolder = gui.addFolder("雷达");
+    let allRadar=[];
+    aaFolder.add({添加雷达:true}, '添加雷达', true, false).onChange(function (value) {
+        if (value){
+            addRadar();
+            /*            for(let i=0;i<50;i++){
+                            let longmax=179, longmin=-179;
+                            let latmax=90,latmin=-90;
+                            longmax=130, longmin=110;
+                            latmax=30,latmin=18;
+                            let radarParam=new Radarparam();
+                            let long=Math.floor(Math.random() * (longmax - longmin + 1)) + longmin;
+                            let lat=Math.floor(Math.random() * (latmax - latmin + 1)) + latmin;
+                            radarParam.UpdateRadarPosition(long,lat,height);
+                            radarObject.CreateRadar(radarParam);
+                            if (radarDisturb1==null) radarDisturb1=new RadarDisturb();
+                            radarParam.Add_disturb(radarDisturb1);
+                            allRadar.push(radarParam);
+                        }*/
+        }
+        else {
+            radarObject.DeleteRadar(radarParam1);
+            radarParam1=null;
+            radarObject.DeleteRadar(radarParam2);
+            radarParam2=null;
+            radarObject.RemoveAll();//删除全部雷达
+            allRadar.length=0;
+        }
+
+    })
+    aaFolder.add({雷达显隐:true}, '雷达显隐', true, false).onChange(function (value) {
+        radarParam1.RadarVisible = value
+    })
+    aaFolder.add({平面模式:false}, '平面模式', true, false).onChange(function (value) {
+        radarParam1.RadarPlaneModel = value
+    })
+    aaFolder.add({雷达位置:0}, '雷达位置', -35, 25).onChange(function (value) {
+        // radarParam1.Radius=value;
+        longitude = 120.892493602+value
+        radarParam1.UpdateRadarPosition(longitude, latitude, height)
+    })
+    aaFolder.add({雷达位置2:0}, '雷达位置2', -25, 25).onChange(function (value) {
+        // radarParam1.Radius=value;
+        latitude =24.822959702+value
+        radarParam1.UpdateRadarPosition(longitude, latitude, height)
+    })
+    aaFolder.add({雷达高度:2000}, '雷达高度', 0, 200000).onChange(function (value) {
+        // radarParam1.Radius=value;
+        height =2000+value
+        radarParam1.UpdateRadarPosition(longitude, latitude, height)
+    })
+    aaFolder.add({显隐格网:true}, '显隐格网', true, false).onChange(function (value) {
+        radarParam1.RadarShowGrid =value
+    })
+    aaFolder.add({显示填充面:true}, '显示填充面', true, false).onChange(function (value) {
+        radarParam1.RadarFill = value
+    })
+    aaFolder.add({固定半径:false}, '固定半径', true, false).onChange(function (value) {
+        radarParam1.RadarParamMissing =value
+    })
+    aaFolder.add({雷达半径:100000}, '雷达半径', 0, 1000000).onChange(function (value) {
+        radarParam1.RadarRadius =value
+    })
+    aaFolder.add({信噪比:10}, '信噪比', 0.1, 50).onChange(function (value) {
+        radarParam1.RadarS_Delta_N=value;
+    })
+    aaFolder.add({发射功率:1000000}, '发射功率', 100000, 10000000).onChange(function (value) {
+        radarParam1.RadarPt=value;
+    })
+    aaFolder.add({主瓣增益:40}, '主瓣增益', 10, 100).onChange(function (value) {
+        radarParam1.RadarGt=value;
+    })
+    aaFolder.add({信号波长:0.056}, '信号波长', 0.001, 0.1).onChange(function (value) {
+        radarParam1.RadarLanBuda=value;
+    })
+    aaFolder.add({反射截面:3}, '反射截面', 0.1, 100).onChange(function (value) {
+        radarParam1.RadarThegema=value;
+    })
+    aaFolder.add({脉冲积累数:16}, '脉冲积累数', 0.1, 100).onChange(function (value) {
+        radarParam1.RadarN=value;
+    })
+    aaFolder.add({玻尔兹曼常数:1.38 * Math.pow(10, -23)}, '玻尔兹曼常数', 1.38 * Math.pow(10, -24), 1.38 * Math.pow(10, -22)).onChange(function (value) {
+        radarParam1.RadarK=value;
+    })
+    aaFolder.add({接收机通频带宽度:160}, '接收机通频带宽度', 0.1, 1000).onChange(function (value) {
+        radarParam1.RadarBn=value;
+    })
+    aaFolder.add({接收机噪声系数:10}, '接收机噪声系数', 0.1, 100).onChange(function (value) {
+        radarParam1.RadarFn=value;
+    })
+    aaFolder.add({噪声温度:290}, '噪声温度', 0.1, 1000).onChange(function (value) {
+        radarParam1.RadarT0=value;
+    })
+    aaFolder.add({开始方位角:0}, '开始方位角', 0, 360).onChange(function (value) {
+        radarParam1.RadarAz_Start_Angle=value;
+    })
+    aaFolder.add({结束方位角:360}, '结束方位角', 0, 360).onChange(function (value) {
+        radarParam1.RadarAz_End_Angle=value;
+    })
+    aaFolder.add({开始俯仰角:-90}, '开始俯仰角', -90, 90).onChange(function (value) {
+        radarParam1.RadarPitch_Start_Angle=value;
+    })
+
+    aaFolder.add({结束俯仰角:90}, '结束俯仰角', -90, 90).onChange(function (value) {
+        radarParam1.RadarPitch_End_Angle=value;
+    })
+    aaFolder.addColor({ 包络颜色: '#ffffff' }, '包络颜色').onChange(value => {
+        radarParam1.RadarColor = value
+    });
+    aaFolder.add({包络混合色:true}, '包络混合色', true, false).onChange(function (value) {
+        radarParam1.RadarBlendWithcolorTable = value
+    })
+    aaFolder.add({包络透明度:0.8}, '包络透明度', 0, 1).onChange(function (value) {
+        radarParam1.RadarAlpha=value;
+    })
+    //天线 开始
+    aaFolder.add({天线图主瓣水平宽度:15}, '天线图主瓣水平宽度', 0, 100).onChange(function (value) {
+        radarParam1.RadarLobeWidth_h=value;
+    })
+    aaFolder.add({天线图主瓣垂直宽度:10}, '天线图主瓣垂直宽度', 0, 100).onChange(function (value) {
+        radarParam1.RadarLobeWidth_v=value;
+    })
+    aaFolder.add({天线图主瓣半功率水平宽度:7}, '天线图主瓣半功率水平宽度', 0, 100).onChange(function (value) {
+        radarParam1.RadarLobeWidth_halfPt_h=value;
+    })
+    aaFolder.add({天线图的比例常数:0.7}, '天线图的比例常数', 0, 2).onChange(function (value) {
+        radarParam1.RadarLobeK=value;
+    })
+    aaFolder.add({天线速度:0.0001}, '天线速度', 0, 0.001).onChange(function (value) {
+        radarParam1.RadarAntenaSpeed=value;
+    })
+    aaFolder.add({天线方位角:45}, '天线方位角', 0, 360).onChange(function (value) {
+        radarParam1.RadarAntenaDirAngle=value;
+    })
+    aaFolder.add({天线俯仰角:0}, '天线俯仰角', 0, 360).onChange(function (value) {
+        radarParam1.RadarAntenaPitchAngle=value;
+    })
+  aaFolder.addColor({ 天线主色: '#edf104' }, '天线主色').onChange(value => {
+    // radarParam1.RadarAntenaHexColor(value);
+        radarParam1.RadarAntenaColor = value
+  });
+    //天线 end
+
+    const aaFolder2 = gui.addFolder("干扰机");
+    aaFolder2.add({压制:false}, '压制', true, false).onChange(function (value) {
+        if (value){
+            createModel();
+            if (radarDisturb1==null) radarDisturb1=new RadarDisturb();
+            if(radarParam1) radarParam1.Add_disturb(radarDisturb1);
+            if (radarParam2) radarParam2.Add_disturb(radarDisturb1);
+            // let radarDisturb3=new RadarDisturb();
+            // radarParam1.Add_disturb(radarDisturb3);
+            // radarDisturb3.UpdatedisturbPosition(122,25,1000)
+        }
+        else {
+            if(radarParam1) radarParam1.Remove_disturb(radarDisturb1);
+            if(radarParam2) radarParam2.Remove_disturb(radarDisturb1);
+            // radarDisturb1.Delete_disturb();
+            radarDisturb1=null;
+            let entity = viewer.entities.getById('displane');
+            if (entity) viewer.entities.remove(entity);
+        }
+    })
+    aaFolder2.add({发射功率:10}, '发射功率', 0.1, 1000).onChange(function (value) {
+        if (radarDisturb1==null) return;
+        radarDisturb1.DisturbPj=value;
+    })
+    aaFolder2.add({发射增益:10}, '发射增益', 0.1, 1000).onChange(function (value) {
+        if (radarDisturb1==null) return;
+        radarDisturb1.DisturbGj=value;
+    })
+    aaFolder2.add({信号带宽:2 * Math.pow(10, 6)}, '信号带宽', 0.1, 2 * Math.pow(10, 8)).onChange(function (value) {
+        if (radarDisturb1==null) return;
+        radarDisturb1.DisturbBj=value;
+    })
+
+    aaFolder2.add({极化损耗:0.5}, '极化损耗', 0.1, 5).onChange(function (value) {
+        if (radarDisturb1==null) return;
+        radarDisturb1.DisturbYj=value;
+    })
+    // aaFolder2.add({压制系数:2}, '压制系数', 0, 10).onChange(function (value) {
+    //     if (radarDisturb1==null) return;
+    //     radarDisturb1.DisturbKj=value;
+    //     radarParam1.Update();
+    // })
+
+    aaFolder2.add({天线的方向性系数:0.8}, '天线的方向性系数', 0.01, 1).onChange(function (value) {
+        if (radarDisturb1==null) return;
+        radarDisturb1.DisturbK=value;
+    })
+    aaFolder2.add({半功率波束宽度:20}, '半功率波束宽度', 0.01, 360).onChange(function (value) {
+        if (radarDisturb1==null) return;
+        radarDisturb1.DisturbTheta=value;
+    })
+
+    const aaFolder4 = gui.addFolder("电磁波");
+    aaFolder4.add({电磁波:false}, '电磁波', true, false).onChange(function (value) {
+        if (value){
+            magneticsWave=new MagneticsWave();
+            magneticsWave.SetMagneticsWaveStartPosition(120.819644806,25.451916258,2000);
+            magneticsWave.SetMagneticsWaveEndPosition(longitude,latitude,height);
+            radarObject.CreateMagneticsWave(magneticsWave);
+            magneticsWave2=new MagneticsWave();
+            magneticsWave2.SetMagneticsWaveStartPosition(120.819644806,25.451916258,2000);
+            magneticsWave2.SetMagneticsWaveEndPosition(longitude+3,latitude,height);
+            radarObject.CreateMagneticsWave(magneticsWave2);
+        }
+        else {
+            radarObject.DeleteMagneticsWave(magneticsWave);
+            magneticsWave=null;
+            radarObject.DeleteMagneticsWave(magneticsWave2);
+            magneticsWave2=null;
+        }
+    })
+    aaFolder4.add({电磁波长度:0}, '电磁波长度', 0, 200000).onChange(function (value) {
+        if (magneticsWave==null) return;
+        magneticsWave.MagneticsWaveLength=value;
+    })
+    aaFolder4.add({自动长度:true}, '自动长度', true, false).onChange(function (value) {
+        if (magneticsWave==null) return;
+        magneticsWave.MagneticsWaveAutoLength=value;
+    })
+    aaFolder4.add({起始宽度:0}, '起始宽度', 0, 2000).onChange(function (value) {
+        if (magneticsWave==null) return;
+        magneticsWave.MagneticsWaveStartWidth=value;
+    })
+    aaFolder4.add({终止宽度:0}, '终止宽度', 0, 200000).onChange(function (value) {
+        if (magneticsWave==null) return;
+        magneticsWave.MagneticsWaveEndWidth=value;
+    })
+    aaFolder4.add({扩散速率:0.005}, '扩散速率', 0, 1).onChange(function (value) {
+        if (magneticsWave==null) return;
+        magneticsWave.MagneticsWaveSpeed=value;
+    })
+    aaFolder4.add({间隔:2}, '间隔', 0, 100).onChange(function (value) {
+        if (magneticsWave==null) return;
+        magneticsWave.MagneticsWaveInterval=value;
+    })
+    aaFolder4.addColor({ 颜色: '#ff0000' }, '颜色').onChange(value => {
+        if (magneticsWave==null) return;
+        magneticsWave.MagneticsWaveColor=value;
+    });
+    aaFolder4.add({透明度:0.8}, '透明度', 0, 1).onChange(function (value) {
+        if (magneticsWave==null) return;
+        magneticsWave.MagneticsWaveAlpha=value;
+    })
+
+    const aaFolder3 = gui.addFolder("雷达组网");
+    aaFolder3.add({组网:false}, '组网', true, false).onChange(function (value) {
+        if (value){
+            if (radarGroup===null){radarGroup = new RadarGroup();}
+            // radarGroup.AddRadarGroup(radarParam1);//组网一个雷达对象
+            radarGroup.AddRadarArrGroup([radarParam2,radarParam1]);
+
+        }
+        else {
+            // radarGroup.DeleteRadarGroup();//删除组网对象
+            radarGroup.RemoveRadarGroup(radarParam1);
+            radarGroup.RemoveRadarGroup(radarParam2);
+            // radarGroup.RemoveRadarArrGroup([radarParam1,radarParam2]);
+        }
+
+    })
+    aaFolder3.addColor({ 组网颜色: '#ffffff' }, '组网颜色').onChange(value => {
+        radarGroup.SetGroupColor(value);
+    });
+
+
+</script>
+</body>
+</html>
