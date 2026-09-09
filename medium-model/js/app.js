@@ -29,7 +29,7 @@ class QSTextureApp {
     async init () {
 
         MEarth.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1MTAzNy1mZmZiLTQzZjctODAyYy01YjBiMDA3Yzc0YzgiLCJpZCI6MTc0MzM1LCJpYXQiOjE3MDA2ODU3ODF9.3vUmixeCI7_QD5nYxq9Nq7cGdRLqQ1E-0TIpOy7C3k4';
-        window.CESIUM_BASE_URL = "/medium-model/MEarth";
+        window.CESIUM_BASE_URL = "/project/medium-model/MEarth";
         // window.CESIUM_BASE_URL = "../MEarth";
 
         // 初始化 MEarth
