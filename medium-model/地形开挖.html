@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+    <meta name="description" content="指定多边形进行地形开挖" />
+    <meta name="cesium-sandcastle-labels" content="地形影像" />
+    <title>地形开挖</title>
+    <script type="text/javascript" src="./templates/Sandcastle-header.js"></script>
+    <script type="text/javascript" src="./MEarth/MEarth.js"></script>
+    <script type="text/javascript" src="./EarthAnalysis/EarthAnalysis.js"></script>
+    <script type="text/javascript" src="./ThirdParty/lil-gui/lil-gui.js"></script>
+    <link href="./MEarth/Widgets/widgets.css" rel="stylesheet">
+</head>
+
+<body class="sandcastle-loading" data-sandcastle-bucket="bucket-requirejs.html">
+    <style>
+        @import url(./templates/bucket.css);
+    </style>
+
+    <div id="cesiumContainer" class="fullSize">
+    </div>
+    <div id="loadingOverlay">
+        <h1>Loading...</h1>
+    </div>
+    <div id="toolbar">
+        <div>
+            <span>开挖深度</span>
+            <input type="text" size="5" id="excavation-depth"
+                data-bind="value: excavationDepth, valueUpdate: 'input'" />
+        </div>
+        <button class="cesium-button" data-bind="click: executeExcavation">绘制开挖区域</button>
+        <button class="cesium-button" data-bind="click: clearExcavation">清除开挖</button>
+    </div>
+
+    <script id="cesium_sandcastle_script">
+        // API说明
+
+        /**
+         * 对地形进行开挖。
+         * 
+         * @param {Number[]} excavationCoordinates 经度和纬度值的列表。值交替 [经度，纬度，经度，纬度…]。
+         * @param {Number} excavationDepth 开挖深度，单位为米。
+         * @param {Object} options 可选参数。使用以下属性创建:
+         * @param {String} options.excavationSideImage 开挖区域侧边纹理路径。
+         * @param {String} options.excavationBottomImage 开挖区域底边纹理路径。
+         * @param {Cartesian2} options.excavationSideImageRepeat 开挖区域侧边纹理的重复次数。
+         * @param {Cartesian2} options.excavationBottomImageRepeat 开挖区域底边纹理的重复次数。
+         * 
+         * 
+         * Globe.prototype.setExcavation(excavationCoordinates, excavationDepth, options);
+         * 
+         */
+
+        /**
+         * 清除地形开挖
+         * 
+         * Globe.prototype.clearExcavation();
+         */
+
+        window.startup = async function (Cesium) {
+            "use strict";
+            //Sandcastle_Begin
+            window.CESIUM_BASE_URL = "./MEarth";
+            const viewer = new Cesium.Viewer("cesiumContainer", {
+                baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+                    Cesium.ArcGisMapServerImageryProvider.fromBasemapType(
+                        Cesium.ArcGisBaseMapType.SATELLITE //设置底图
+                    )
+                ),
+
+            });
+            const terrainProvider = await Cesium.CesiumTerrainProvider.fromUrl(
+                'https://data.mars3d.cn/terrain',
+                {
+                    requestWaterMask: true,
+                    requestVertexNormals: true,
+
+                });
+            terrainProvider.enableProjectedAreaLod = true; //地形倾清晰度开关
+
+            const scene = viewer.scene;
+            const globe = scene.globe;
+            globe.depthTestAgainstTerrain = true;
+
+            const viewModel = {
+                excavationDepth: 50,
+                executeExcavation: executeExcavation,
+                clearExcavation: clearExcavation,
+            };
+
+            const drawTool = new EarthAnalysis.DrawTool(viewer, {
+                drawType: EarthAnalysis.DrawType.POLYGON,
+                clampMode: EarthAnalysis.ClampMode.CLAMP_TO_GROUND
+            });
+
+            drawTool.drawCompletedEvent.addEventListener(function (positions) {
+                if (positions.length < 3) {
+                    return;
+                }
+
+                drawTool.clear();
+                const coordinations = [];
+                for (let i = 0; i < positions.length; ++i) {
+                    const cartographic = Cesium.Cartographic.fromCartesian(positions[i]);
+                    const lon = Cesium.Math.toDegrees(cartographic.longitude);
+                    const lat = Cesium.Math.toDegrees(cartographic.latitude);
+                    coordinations.push(lon, lat);
+                }
+debugger
+                globe.setExcavation(coordinations, viewModel.excavationDepth, {
+                    // 可自定义侧边和底边纹理
+                    // excavationSideImage: '../images/globe_excavation/excavate_side_min.jpg',
+                    // excavationBottomImage: '../images/globe_excavation/excavate_bottom_min.jpg',
+
+                    // 根据开挖范围调整侧边和底边纹理的重复次数  (水平重复次数, 竖直重复次数)
+                    excavationSideImageRepeat: new Cesium.Cartesian2(8.0, 1.0),
+                    excavationBottomImageRepeat: new Cesium.Cartesian2(3.0, 3.0)
+                });
+
+            });
+
+            function executeExcavation () {
+                drawTool.clear();
+                drawTool.activate();
+            }
+
+            function clearExcavation () {
+                globe.clearExcavation();
+            }
+
+            scene.camera.setView({
+                destination: new Cesium.Cartesian3(-1286452.6635032152, 5322707.035383689, 3262805.1228990983),
+                orientation: {
+                    heading: 6.238736020013993,
+                    pitch: -0.6213595390289735,
+                    roll: 6.28316878357884
+                }
+            });
+
+            const toolbar = document.getElementById("toolbar");
+            Cesium.knockout.track(viewModel);
+            Cesium.knockout.applyBindings(viewModel, toolbar);
+
+            //Sandcastle_End
+            Sandcastle.finishedLoading();
+        }
+
+        if (typeof Cesium !== "undefined") {
+            window.startupCalled = true;
+            startup(Cesium);
+        }
+    </script>
+</body>
+
+</html>

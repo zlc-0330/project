@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地下结构多层介质模型可视化</title>
+    <script src="./MEarth/MEarth.js"></script>
+    <link href="./MEarth/Widgets/widgets.css" rel="stylesheet">
+    <link href="./css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="mearthContainer"></div>
+    <div id="controlPanel">
+        <h3>🌊 多层介质模型可视化</h3>
+
+        <div class="control-group">
+            <label for="heightSelector">选择高度层:</label>
+            <select id="heightSelector">
+                <option value="none">隐藏所有高度层</option>
+                <option value="all">显示所有高度层</option>
+            </select>
+        </div>
+
+        <!-- 纵向剖面控制 -->
+        <div class="control-group">
+            <div class="profile-control-row">
+                <label for="longitudinalSlider">纵向剖面 (纬度):</label>
+                <span id="longitudinalValue" class="profile-value">-</span>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="longitudinalVisible" checked>
+                    <label for="longitudinalVisible" class="checkbox-label">显示</label>
+                </div>
+            </div>
+            <input type="range" id="longitudinalSlider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+
+        <!-- 横向剖面控制 -->
+        <div class="control-group">
+            <div class="profile-control-row">
+                <label for="latitudinalSlider">横向剖面 (经度):</label>
+                <span id="latitudinalValue" class="profile-value">-</span>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="latitudinalVisible" checked>
+                    <label for="latitudinalVisible" class="checkbox-label">显示</label>
+                </div>
+            </div>
+            <input type="range" id="latitudinalSlider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <label for="minValue">最小值:</label>
+            <input type="number" id="minValue" value="3.3" step="0.1">
+        </div>
+
+        <div class="control-group">
+            <label for="maxValue">最大值:</label>
+            <input type="number" id="maxValue" value="3.9" step="0.1">
+        </div>
+
+        <div class="control-group">
+            <label for="colorScheme">配色方案:</label>
+            <select id="colorScheme">
+                <option value="heatmap">热力图</option>
+                <option value="viridis">Viridis</option>
+                <option value="plasma">Plasma</option>
+                <option value="jet">Jet</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="levelScale">层间隔: <span id="levelScaleValue">6.0</span></label>
+            <input type="range" id="levelScale" min="0.1" max="20" step="0.1" value="6.0">
+        </div>
+
+        <div class="control-group">
+            <label for="globalOpacity">层透明度: <span id="opacityValue">0.0</span></label>
+            <input type="range" id="globalOpacity" min="0" max="1" step="0.1" value="0.0">
+        </div>
+
+        <div class="control-group">
+            <label for="profileOpacity">剖面透明度: <span id="profileOpacityValue">0.0</span></label>
+            <input type="range" id="profileOpacity" min="0" max="1" step="0.1" value="0.0">
+        </div>
+
+        <!-- <button id="updateTexture">更新所有纹理</button> -->
+        <!-- <button id="toggleAllLayers">隐藏所有层</button> -->
+        <button id="toggleBoundsProfiles">显示边界剖面墙</button>
+        <button id="resetView">重置视图</button>
+    </div>
+    <div id="loading">加载数据中...</div>
+
+    <script src="./js/texture-generator.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+
+</html>

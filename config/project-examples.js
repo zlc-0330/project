@@ -99,6 +99,19 @@ export default [
                 // openUrl: 'https://gltf-viewer.donmccurdy.com/',
                 image: HOST + 'files/images/cesium-radar.png',
             },
+            {
+                id: 'medium-model',
+                name: 'medium-model',
+                name_en: '介质模型',
+                tip: '基于MEarth实现的介质模型效果（地形开挖和热力图哦等效果相结合）',
+                // tag: TEXTS['smartCity'],
+                author: 'zlc-0330',
+                openUrl: HOST + 'medium-model/',  // 直接打开打包后的页面
+                // githubUrl: 'https://github.com/zlc-0330/mapbox-encap',
+                // openUrl: 'https://gltf-viewer.donmccurdy.com/',
+                image: HOST + 'files/images/medium-model.png',
+            },
+
         ]
     },
 
