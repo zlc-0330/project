@@ -111,6 +111,19 @@ export default [
                 // openUrl: 'https://gltf-viewer.donmccurdy.com/',
                 image: HOST + 'files/images/medium-model.png',
             },
+            {
+                id: 'file-upload',
+                name: 'file-upload',
+                name_en: '文件上传',
+                tip: '实现阿里云的文件上传',
+                // tag: TEXTS['smartCity'],
+                author: 'zlc-0330',
+                openUrl: HOST + 'file-upload/',  // 直接打开打包后的页面
+                githubUrl: 'https://github.com/zlc-0330/file-upload',
+                // openUrl: 'https://gltf-viewer.donmccurdy.com/',
+                image: HOST + 'files/images/file-upload.png',
+            },
+
 
         ]
     },
